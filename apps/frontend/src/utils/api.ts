@@ -493,6 +493,35 @@ export const api = {
     }
   },
 
+  async getResume(): Promise<any> {
+    return request<any>('/resumes/me');
+  },
+
+  async uploadResume(formData: FormData): Promise<any> {
+    const url = `${API_BASE_URL}/resumes/upload`;
+    const token = localStorage.getItem('accessToken') || '';
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Upload failed with status ${response.status}`);
+    }
+
+    return response.json();
+  },
+
+  async deleteResume(id: string): Promise<any> {
+    return request<any>(`/resumes/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   async savePreferences(theme: 'light' | 'dark'): Promise<{ success: boolean; theme: string }> {
     try {
       return await request<{ success: boolean; theme: string }>('/preferences', {
