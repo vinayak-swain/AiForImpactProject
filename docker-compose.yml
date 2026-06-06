@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: techprep-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: techprep
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - techprep-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: techprep-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - techprep-network
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: techprep-api
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/techprep
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=super-secret-jwt-key
+      - COOKIE_SECRET=super-secret-cookie-key
+      - AI_SERVICE_URL=http://ai-service:8000
+      - AWS_ACCESS_KEY_ID=mock
+      - AWS_SECRET_ACCESS_KEY=mock
+      - AWS_REGION=us-east-1
+      - S3_BUCKET_NAME=techprep-ai-reports
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - techprep-network
+
+  ai-service:
+    build:
+      context: ./apps/ai-service
+      dockerfile: Dockerfile
+    container_name: techprep-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/techprep
+      - AWS_ACCESS_KEY_ID=mock
+      - AWS_SECRET_ACCESS_KEY=mock
+      - AWS_REGION=us-east-1
+      - S3_BUCKET_NAME=techprep-ai-reports
+    depends_on:
+      - redis
+    networks:
+      - techprep-network
+
+  pdf-worker:
+    build:
+      context: ./apps/ai-service
+      dockerfile: Dockerfile.worker
+    container_name: techprep-pdf-worker
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/techprep
+      - AWS_ACCESS_KEY_ID=mock
+      - AWS_SECRET_ACCESS_KEY=mock
+      - AWS_REGION=us-east-1
+      - S3_BUCKET_NAME=techprep-ai-reports
+    depends_on:
+      - redis
+      - postgres
+      - ai-service
+    networks:
+      - techprep-network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  techprep-network:
+    driver: bridge

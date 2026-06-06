@@ -14,6 +14,10 @@ async function redisPlugin(fastify: FastifyInstance) {
     maxRetriesPerRequest: null,
   });
 
+  redis.on('error', (err) => {
+    fastify.log.warn('Redis connection issue: ' + err.message);
+  });
+
   fastify.decorate('redis', redis);
 
   fastify.addHook('onClose', async (server) => {

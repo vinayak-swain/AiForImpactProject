@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+dist/
+build/
+.env
+
+# Frontend (ignored because your friend is building it)
+apps/web/
+
+# Python virtual environment & cache
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+*.pyc
+
+# Local storage
+local_storage/
+
+# IDE files
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -237,6 +237,20 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
         const userRes = await fastify.db.query('SELECT "experienceLevel" FROM "User" WHERE id = $1', [userId]);
         const expLevel = userRes.rows[0]?.experienceLevel || 'junior';
 
+        // Fetch the conversation history so far (questions and answers)
+        const historyRes = await fastify.db.query(
+          `SELECT q."questionText", a."answerText" 
+           FROM "Question" q 
+           LEFT JOIN "Answer" a ON q.id = a."questionId" 
+           WHERE q."sessionId" = $1 
+           ORDER BY q."orderIndex" ASC`,
+          [sessionId]
+        );
+        const chatHistory = historyRes.rows.map(row => ({
+          question: row.questionText,
+          answer: row.answerText || ''
+        }));
+
         const response = await fetch(`${aiServiceUrl}/ai/generate-question`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -246,6 +260,7 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
             experience_level: expLevel,
             resume_summary: resumeSummary,
             previous_questions: previousQuestionsText,
+            chat_history: chatHistory,
           }),
         });
 
@@ -448,6 +463,66 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       fastify.log.info(`Published PDF trigger to channel 'pdf:generate' for session ${sessionId}`);
     } catch (err) {
       fastify.log.error(err, 'Failed to trigger PDF report job via Redis pub/sub');
+    }
+
+    // Generate a mock PDF if running in local/mock database mode
+    const isMockDb = fastify.db.constructor.name === 'MockPool';
+    if (isMockDb) {
+      try {
+        const reportS3Key = `reports/${userId}/${sessionId}.pdf`;
+        const mockPdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> >> >> >>
+endobj
+4 0 obj
+<< /Length 150 >>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(TechPrep AI Interview Report) Tj
+/F1 12 Tf
+0 -40 Td
+(Role Target: ${updateRes.rows[0].role}) Tj
+0 -20 Td
+(Overall Score: ${Math.round(avgScore)}%) Tj
+0 -20 Td
+(Grade: ${grade}) Tj
+0 -40 Td
+(Detailed feedback and visual radar charts will be shown) Tj
+0 -20 Td
+(in the interactive dashboard logs under your session.) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000248 00000 n
+trailer
+<< /Size 5 /Root 1 0 R >>
+startxref
+450
+%%EOF`;
+        await fastify.storage.uploadFile(reportS3Key, Buffer.from(mockPdfContent), 'application/pdf');
+        
+        // Update mock db session reportS3Key
+        await fastify.db.query(
+          'UPDATE "Session" SET "reportS3Key" = $1 WHERE id = $2 RETURNING *',
+          [reportS3Key, sessionId]
+        );
+      } catch (err) {
+        fastify.log.error(err, 'Failed to generate mock PDF report');
+      }
     }
 
     return updateRes.rows[0];

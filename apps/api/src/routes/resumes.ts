@@ -117,9 +117,13 @@ export default async function resumeRoutes(fastify: FastifyInstance) {
   // GET /download-local (Serves files locally in development)
   fastify.get('/download-local', {
     schema: {
-      querystring: z.object({
-        key: z.string(),
-      })
+      querystring: {
+        type: 'object',
+        required: ['key'],
+        properties: {
+          key: { type: 'string' }
+        }
+      }
     },
     handler: async (request, reply) => {
       const { key } = request.query as { key: string };
