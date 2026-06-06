@@ -30,11 +30,11 @@ async function jwtPlugin(fastify: FastifyInstance) {
   });
 
   fastify.decorate('authenticate', async (request: any, reply: any) => {
-    // Inject mock user profile for internal testing to bypass JWT validation
-    request.user = {
-      sub: 'mock-user-id-1234',
-      email: 'mock-test-candidate@example.com',
-    };
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      reply.send(err);
+    }
   });
 }
 
