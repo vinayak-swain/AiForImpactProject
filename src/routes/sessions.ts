@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import crypto from 'crypto';
 
 const StartSessionSchema = z.object({
   role: z.string(),
@@ -28,29 +29,30 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
   // POST /start
   fastify.post('/start', async (request, reply) => {
     const data = StartSessionSchema.parse(request.body);
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
 
-    // Fetch user and resume context
-    const user = await fastify.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    // Fetch user details
+    const userRes = await fastify.db.query('SELECT "experienceLevel" FROM "User" WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
 
+    // Fetch resume context
     let resumeSummary = '';
     if (data.resumeId) {
-      const resume = await fastify.prisma.resume.findUnique({
-        where: { id: data.resumeId },
-      });
-      if (resume && resume.userId === userId) {
-        resumeSummary = JSON.stringify(resume.parsedJson);
+      const resumeRes = await fastify.db.query(
+        'SELECT "parsedJson" FROM "Resume" WHERE id = $1 AND "userId" = $2',
+        [data.resumeId, userId]
+      );
+      if (resumeRes.rowCount && resumeRes.rowCount > 0) {
+        resumeSummary = JSON.stringify(resumeRes.rows[0].parsedJson);
       }
     } else {
       // Use latest resume if available
-      const latestResume = await fastify.prisma.resume.findFirst({
-        where: { userId },
-        orderBy: { uploadedAt: 'desc' },
-      });
-      if (latestResume) {
-        resumeSummary = JSON.stringify(latestResume.parsedJson);
+      const resumeRes = await fastify.db.query(
+        'SELECT "parsedJson" FROM "Resume" WHERE "userId" = $1 ORDER BY "uploadedAt" DESC LIMIT 1',
+        [userId]
+      );
+      if (resumeRes.rowCount && resumeRes.rowCount > 0) {
+        resumeSummary = JSON.stringify(resumeRes.rows[0].parsedJson);
       }
     }
 
@@ -86,29 +88,22 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
     }
 
     // Create session in DB
-    const session = await fastify.prisma.session.create({
-      data: {
-        userId,
-        interviewType: data.interviewType,
-        role: data.role,
-        durationMins: data.durationMins,
-      },
-    });
+    const sessionId = crypto.randomUUID();
+    const sessionRes = await fastify.db.query(
+      'INSERT INTO "Session" (id, "userId", "interviewType", role, "durationMins") VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [sessionId, userId, data.interviewType, data.role, data.durationMins]
+    );
 
     // Create first question in DB
-    const firstQuestion = await fastify.prisma.question.create({
-      data: {
-        sessionId: session.id,
-        questionText,
-        questionType,
-        difficulty,
-        orderIndex: 0,
-      },
-    });
+    const questionId = crypto.randomUUID();
+    const questionRes = await fastify.db.query(
+      'INSERT INTO "Question" (id, "sessionId", "questionText", "questionType", difficulty, "orderIndex") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [questionId, sessionId, questionText, questionType, difficulty, 0]
+    );
 
     return {
-      sessionId: session.id,
-      firstQuestion,
+      sessionId,
+      firstQuestion: questionRes.rows[0],
     };
   });
 
@@ -116,18 +111,26 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
   fastify.post('/:id/answer', async (request, reply) => {
     const { id: sessionId } = request.params as { id: string };
     const { questionId, answerText } = AnswerSchema.parse(request.body);
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
 
-    const session = await fastify.prisma.session.findUnique({
-      where: { id: sessionId },
-      include: { questions: { include: { answer: true } } },
-    });
+    const sessionRes = await fastify.db.query(
+      'SELECT * FROM "Session" WHERE id = $1 AND "userId" = $2',
+      [sessionId, userId]
+    );
 
-    if (!session || session.userId !== userId) {
+    if (sessionRes.rowCount === 0) {
       return reply.status(404).send({ error: 'Not Found', message: 'Session not found' });
     }
+    const session = sessionRes.rows[0];
 
-    const question = session.questions.find((q) => q.id === questionId);
+    // Fetch all questions for this session to verify and count
+    const questionsRes = await fastify.db.query(
+      'SELECT * FROM "Question" WHERE "sessionId" = $1 ORDER BY "orderIndex" ASC',
+      [sessionId]
+    );
+    const questions = questionsRes.rows;
+
+    const question = questions.find((q) => q.id === questionId);
     if (!question) {
       return reply.status(404).send({ error: 'Not Found', message: 'Question not found' });
     }
@@ -155,7 +158,6 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       }
     } catch (err) {
       fastify.log.error(err, 'AI Scorer offline. Using mock fallback score.');
-      // Mock score data
       scoreData = {
         star_score: 18.0,
         tech_depth_score: 16.0,
@@ -177,39 +179,42 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       };
     }
 
-    // Save answer and score to database
+    // Save answer to database
     const wordCount = answerText.split(/\s+/).filter(Boolean).length;
-    const answer = await fastify.prisma.answer.create({
-      data: {
-        questionId,
-        userId,
-        answerText,
-        wordCount,
-      },
-    });
+    const answerId = crypto.randomUUID();
+    const answerRes = await fastify.db.query(
+      'INSERT INTO "Answer" (id, "questionId", "userId", "answerText", "wordCount") VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [answerId, questionId, userId, answerText, wordCount]
+    );
 
-    const score = await fastify.prisma.score.create({
-      data: {
-        answerId: answer.id,
-        starScore: scoreData.star_score,
-        techDepthScore: scoreData.tech_depth_score,
-        commScore: scoreData.comm_score,
-        relevanceScore: scoreData.relevance_score,
-        confidenceScore: scoreData.confidence_score,
-        concisenessScore: scoreData.conciseness_score,
-        overallScore: scoreData.overall_score,
-        aiFeedbackJson: {
-          star: scoreData.star_feedback,
-          topStrength: scoreData.top_strength,
-          topWeakness: scoreData.top_weakness,
-          fillerWords: scoreData.filler_words,
-          idealAnswerSkeleton: scoreData.ideal_answer_skeleton,
-        },
-      },
-    });
+    // Save score to database
+    const scoreId = crypto.randomUUID();
+    const aiFeedbackJson = {
+      star: scoreData.star_feedback,
+      topStrength: scoreData.top_strength,
+      topWeakness: scoreData.top_weakness,
+      fillerWords: scoreData.filler_words,
+      idealAnswerSkeleton: scoreData.ideal_answer_skeleton,
+    };
 
-    // Check if we need to generate next question (max 5 questions per session for standard practice)
-    const currentQuestionCount = session.questions.length;
+    const scoreRes = await fastify.db.query(
+      'INSERT INTO "Score" (id, "answerId", "starScore", "techDepthScore", "commScore", "relevanceScore", "confidenceScore", "concisenessScore", "overallScore", "aiFeedbackJson") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+      [
+        scoreId,
+        answerId,
+        scoreData.star_score,
+        scoreData.tech_depth_score,
+        scoreData.comm_score,
+        scoreData.relevance_score,
+        scoreData.confidence_score,
+        scoreData.conciseness_score,
+        scoreData.overall_score,
+        JSON.stringify(aiFeedbackJson),
+      ]
+    );
+
+    // Check if we need to generate next question
+    const currentQuestionCount = questions.length;
     let nextQuestion = null;
 
     if (currentQuestionCount < 5) {
@@ -219,14 +224,18 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       let nextFollowUpHint = 'Probe for concrete results.';
 
       try {
-        const previousQuestionsText = session.questions.map((q) => q.questionText);
-        const userDetails = await fastify.prisma.user.findUnique({ where: { id: userId } });
+        const previousQuestionsText = questions.map((q) => q.questionText);
         
         // Grab latest resume for context
-        const resume = await fastify.prisma.resume.findFirst({
-          where: { userId },
-          orderBy: { uploadedAt: 'desc' },
-        });
+        const resumeRes = await fastify.db.query(
+          'SELECT "parsedJson" FROM "Resume" WHERE "userId" = $1 ORDER BY "uploadedAt" DESC LIMIT 1',
+          [userId]
+        );
+        const resumeSummary = resumeRes.rowCount ? JSON.stringify(resumeRes.rows[0].parsedJson) : null;
+
+        // User experience level
+        const userRes = await fastify.db.query('SELECT "experienceLevel" FROM "User" WHERE id = $1', [userId]);
+        const expLevel = userRes.rows[0]?.experienceLevel || 'junior';
 
         const response = await fetch(`${aiServiceUrl}/ai/generate-question`, {
           method: 'POST',
@@ -234,8 +243,8 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
           body: JSON.stringify({
             role: session.role,
             interview_type: session.interviewType,
-            experience_level: userDetails?.experienceLevel || 'junior',
-            resume_summary: resume ? JSON.stringify(resume.parsedJson) : null,
+            experience_level: expLevel,
+            resume_summary: resumeSummary,
             previous_questions: previousQuestionsText,
           }),
         });
@@ -251,20 +260,17 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
         fastify.log.error(err, 'Failed to fetch next question. Using fallback.');
       }
 
-      nextQuestion = await fastify.prisma.question.create({
-        data: {
-          sessionId: session.id,
-          questionText: nextQuestionText,
-          questionType: nextQuestionType,
-          difficulty: nextDifficulty,
-          orderIndex: currentQuestionCount,
-        },
-      });
+      const nextQuestionId = crypto.randomUUID();
+      const insertQRes = await fastify.db.query(
+        'INSERT INTO "Question" (id, "sessionId", "questionText", "questionType", difficulty, "orderIndex") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [nextQuestionId, sessionId, nextQuestionText, nextQuestionType, nextDifficulty, currentQuestionCount]
+      );
+      nextQuestion = insertQRes.rows[0];
     }
 
     return {
-      scoreId: score.id,
-      scores: score,
+      scoreId,
+      scores: scoreRes.rows[0],
       nextQuestion,
     };
   });
@@ -272,30 +278,35 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
   // GET /:id/feedback-stream (SSE)
   fastify.get('/:id/feedback-stream', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id: sessionId } = request.params as { id: string };
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
 
-    const session = await fastify.prisma.session.findUnique({
-      where: { id: sessionId },
-      include: {
-        questions: {
-          orderBy: { orderIndex: 'desc' },
-          include: { answer: { include: { score: true } } },
-        },
-      },
-    });
+    const sessionRes = await fastify.db.query(
+      'SELECT * FROM "Session" WHERE id = $1 AND "userId" = $2',
+      [sessionId, userId]
+    );
 
-    if (!session || session.userId !== userId) {
+    if (sessionRes.rowCount === 0) {
       return reply.status(404).send({ error: 'Not Found', message: 'Session not found' });
     }
+    const session = sessionRes.rows[0];
 
-    // Get the latest question that has an answer and score
-    const latestQuestionWithScore = session.questions.find((q) => q.answer && q.answer.score);
-    if (!latestQuestionWithScore || !latestQuestionWithScore.answer || !latestQuestionWithScore.answer.score) {
+    // Fetch the latest question with an answer and a score
+    const qWithScoreRes = await fastify.db.query(
+      `SELECT q.*, a.id as "answerId", s.id as "scoreId", s."starScore", s."techDepthScore", s."commScore", 
+              s."relevanceScore", s."confidenceScore", s."concisenessScore", s."overallScore", s."aiFeedbackJson" 
+       FROM "Question" q 
+       JOIN "Answer" a ON q.id = a."questionId" 
+       JOIN "Score" s ON a.id = s."answerId" 
+       WHERE q."sessionId" = $1 
+       ORDER BY q."orderIndex" DESC LIMIT 1`,
+      [sessionId]
+    );
+
+    if (qWithScoreRes.rowCount === 0) {
       return reply.status(400).send({ error: 'Bad Request', message: 'No scored answers found to provide streaming feedback for' });
     }
 
-    const answer = latestQuestionWithScore.answer;
-    const score = latestQuestionWithScore.answer.score;
+    const latestQ = qWithScoreRes.rows[0];
 
     // Set up SSE headers
     reply.raw.writeHead(200, {
@@ -307,18 +318,18 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
 
     const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
     const scoreJson = {
-      star_score: score.starScore,
-      tech_depth_score: score.techDepthScore,
-      comm_score: score.commScore,
-      relevance_score: score.relevanceScore,
-      confidence_score: score.confidenceScore,
-      conciseness_score: score.concisenessScore,
-      overall_score: score.overallScore,
-      star_feedback: (score.aiFeedbackJson as any).star,
-      top_strength: (score.aiFeedbackJson as any).topStrength,
-      top_weakness: (score.aiFeedbackJson as any).topWeakness,
-      filler_words: (score.aiFeedbackJson as any).fillerWords,
-      ideal_answer_skeleton: (score.aiFeedbackJson as any).idealAnswerSkeleton,
+      star_score: latestQ.starScore,
+      tech_depth_score: latestQ.techDepthScore,
+      comm_score: latestQ.commScore,
+      relevance_score: latestQ.relevanceScore,
+      confidence_score: latestQ.confidenceScore,
+      conciseness_score: latestQ.concisenessScore,
+      overall_score: latestQ.overallScore,
+      star_feedback: latestQ.aiFeedbackJson.star,
+      top_strength: latestQ.aiFeedbackJson.topStrength,
+      top_weakness: latestQ.aiFeedbackJson.topWeakness,
+      filler_words: latestQ.aiFeedbackJson.fillerWords,
+      ideal_answer_skeleton: latestQ.aiFeedbackJson.idealAnswerSkeleton,
     };
 
     try {
@@ -327,7 +338,7 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           score_json: scoreJson,
-          question: latestQuestionWithScore.questionText,
+          question: latestQ.questionText,
           role: session.role,
         }),
       });
@@ -336,7 +347,6 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
         throw new Error(`AI Feedback Stream returned ${response.status}`);
       }
 
-      // Read from the Response stream and pipe it to reply.raw
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
@@ -348,7 +358,6 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       }
     } catch (err) {
       fastify.log.error(err, 'Error in streaming feedback from AI service');
-      // Stream dummy coaching message
       reply.raw.write(`data: STRENGTH:\nGreat structure and assertive delivery.\n\n`);
       reply.raw.write(`data: WEAKNESS:\nCould expand on technical implementation steps.\n\n`);
       reply.raw.write(`data: NEXT_TIME:\nInclude metric percentages for concrete results.\n\n`);
@@ -360,25 +369,30 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
   // POST /:id/end
   fastify.post('/:id/end', async (request, reply) => {
     const { id: sessionId } = request.params as { id: string };
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
 
-    const session = await fastify.prisma.session.findUnique({
-      where: { id: sessionId },
-      include: { questions: { include: { answer: { include: { score: true } } } } },
-    });
+    const sessionRes = await fastify.db.query(
+      'SELECT * FROM "Session" WHERE id = $1 AND "userId" = $2',
+      [sessionId, userId]
+    );
 
-    if (!session || session.userId !== userId) {
+    if (sessionRes.rowCount === 0) {
       return reply.status(404).send({ error: 'Not Found', message: 'Session not found' });
     }
 
-    // Calculate overall session average score
-    const scores = session.questions
-      .map((q) => q.answer?.score?.overallScore)
-      .filter((s): s is number => typeof s === 'number');
+    // Get all scores for this session
+    const scoresRes = await fastify.db.query(
+      `SELECT s."overallScore" 
+       FROM "Question" q 
+       JOIN "Answer" a ON q.id = a."questionId" 
+       JOIN "Score" s ON a.id = s."answerId" 
+       WHERE q."sessionId" = $1`,
+      [sessionId]
+    );
 
+    const scores = scoresRes.rows.map((r) => r.overallScore);
     const avgScore = scores.length > 0 ? scores.reduce((sum, s) => sum + s, 0) / scores.length : 0;
 
-    // Assign letter grade
     let grade = 'F';
     if (avgScore >= 90) grade = 'A';
     else if (avgScore >= 80) grade = 'B';
@@ -386,28 +400,48 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
     else if (avgScore >= 50) grade = 'D';
 
     // Update Session
-    const updatedSession = await fastify.prisma.session.update({
-      where: { id: sessionId },
-      data: {
-        endedAt: new Date(),
-        overallScore: avgScore,
-        grade,
-      },
-    });
+    const updateRes = await fastify.db.query(
+      'UPDATE "Session" SET "endedAt" = $1, "overallScore" = $2, grade = $3 WHERE id = $4 RETURNING *',
+      [new Date(), avgScore, grade, sessionId]
+    );
 
-    // Check / update user badges
-    const userSessions = await fastify.prisma.session.count({ where: { userId } });
-    if (userSessions === 10) {
-      await fastify.prisma.badge.create({ data: { userId, badgeType: 'sessions_10' } });
-    }
-    if (avgScore >= 80) {
-      const scoreBadgeExists = await fastify.prisma.badge.findFirst({ where: { userId, badgeType: 'score_80' } });
-      if (!scoreBadgeExists) {
-        await fastify.prisma.badge.create({ data: { userId, badgeType: 'score_80' } });
+    // Check and update badges
+    const userSessionsCountRes = await fastify.db.query(
+      'SELECT COUNT(*) FROM "Session" WHERE "userId" = $1 AND "endedAt" IS NOT NULL',
+      [userId]
+    );
+    const userSessionsCount = parseInt(userSessionsCountRes.rows[0].count, 10);
+
+    if (userSessionsCount === 10) {
+      // Check if they already have the badge
+      const badgeRes = await fastify.db.query(
+        'SELECT 1 FROM "Badge" WHERE "userId" = $1 AND "badgeType" = \'sessions_10\'',
+        [userId]
+      );
+      if (badgeRes.rowCount === 0) {
+        const badgeId = crypto.randomUUID();
+        await fastify.db.query(
+          'INSERT INTO "Badge" (id, "userId", "badgeType") VALUES ($1, $2, $3)',
+          [badgeId, userId, 'sessions_10']
+        );
       }
     }
 
-    // Trigger async PDF report generation via Redis pub/sub
+    if (avgScore >= 80) {
+      const badgeRes = await fastify.db.query(
+        'SELECT 1 FROM "Badge" WHERE "userId" = $1 AND "badgeType" = \'score_80\'',
+        [userId]
+      );
+      if (badgeRes.rowCount === 0) {
+        const badgeId = crypto.randomUUID();
+        await fastify.db.query(
+          'INSERT INTO "Badge" (id, "userId", "badgeType") VALUES ($1, $2, $3)',
+          [badgeId, userId, 'score_80']
+        );
+      }
+    }
+
+    // Trigger PDF report generation via Redis
     try {
       const redisPayload = JSON.stringify({ session_id: sessionId, user_id: userId });
       await fastify.redis.publish('pdf:generate', redisPayload);
@@ -416,45 +450,85 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       fastify.log.error(err, 'Failed to trigger PDF report job via Redis pub/sub');
     }
 
-    return updatedSession;
+    return updateRes.rows[0];
   });
 
   // GET /:id
   fastify.get('/:id', async (request, reply) => {
     const { id: sessionId } = request.params as { id: string };
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
 
-    const session = await fastify.prisma.session.findUnique({
-      where: { id: sessionId },
-      include: {
-        questions: {
-          orderBy: { orderIndex: 'asc' },
-          include: { answer: { include: { score: true } } },
-        },
-      },
-    });
+    const sessionRes = await fastify.db.query(
+      'SELECT * FROM "Session" WHERE id = $1 AND "userId" = $2',
+      [sessionId, userId]
+    );
 
-    if (!session || session.userId !== userId) {
+    if (sessionRes.rowCount === 0) {
       return reply.status(404).send({ error: 'Not Found', message: 'Session not found' });
     }
+    const session = sessionRes.rows[0];
 
+    // Fetch questions, answers, and scores
+    const questionsRes = await fastify.db.query(
+      `SELECT q.*, a.id as "answerId", a."userId" as "answerUserId", a."answerText", a."wordCount", a."submittedAt",
+              s.id as "scoreId", s."starScore", s."techDepthScore", s."commScore", 
+              s."relevanceScore", s."confidenceScore", s."concisenessScore", s."overallScore", s."aiFeedbackJson"
+       FROM "Question" q
+       LEFT JOIN "Answer" a ON q.id = a."questionId"
+       LEFT JOIN "Score" s ON a.id = s."answerId"
+       WHERE q."sessionId" = $1
+       ORDER BY q."orderIndex" ASC`,
+      [sessionId]
+    );
+
+    const questions = questionsRes.rows.map((row) => ({
+      id: row.id,
+      sessionId: row.sessionId,
+      questionText: row.questionText,
+      questionType: row.questionType,
+      difficulty: row.difficulty,
+      orderIndex: row.orderIndex,
+      answer: row.answerId ? {
+        id: row.answerId,
+        questionId: row.id,
+        userId: row.answerUserId,
+        answerText: row.answerText,
+        wordCount: row.wordCount,
+        submittedAt: row.submittedAt,
+        score: row.scoreId ? {
+          id: row.scoreId,
+          answerId: row.answerId,
+          starScore: row.starScore,
+          techDepthScore: row.techDepthScore,
+          commScore: row.commScore,
+          relevanceScore: row.relevanceScore,
+          confidenceScore: row.confidenceScore,
+          concisenessScore: row.concisenessScore,
+          overallScore: row.overallScore,
+          aiFeedbackJson: row.aiFeedbackJson,
+        } : null,
+      } : null,
+    }));
+
+    session.questions = questions;
     return session;
   });
 
   // GET /:id/report
   fastify.get('/:id/report', async (request, reply) => {
     const { id: sessionId } = request.params as { id: string };
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
 
-    const session = await fastify.prisma.session.findUnique({
-      where: { id: sessionId },
-    });
+    const sessionRes = await fastify.db.query(
+      'SELECT "reportS3Key" FROM "Session" WHERE id = $1 AND "userId" = $2',
+      [sessionId, userId]
+    );
 
-    if (!session || session.userId !== userId) {
+    if (sessionRes.rowCount === 0) {
       return reply.status(404).send({ error: 'Not Found', message: 'Session not found' });
     }
 
-    // If report key isn't ready yet, fallback or wait
+    const session = sessionRes.rows[0];
     const reportS3Key = session.reportS3Key || `reports/${userId}/${sessionId}.pdf`;
 
     try {
@@ -468,41 +542,89 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
 
   // GET /history
   fastify.get('/history', async (request, reply) => {
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
     const { page, limit, role, type, dateFrom } = HistoryQuerySchema.parse(request.query);
 
-    const skip = (page - 1) * limit;
+    const offset = (page - 1) * limit;
 
-    const whereClause: any = {
-      userId,
-      endedAt: { not: null },
-    };
+    let queryStr = 'SELECT * FROM "Session" WHERE "userId" = $1 AND "endedAt" IS NOT NULL';
+    let countStr = 'SELECT COUNT(*) FROM "Session" WHERE "userId" = $1 AND "endedAt" IS NOT NULL';
+    const params: any[] = [userId];
+    let paramIndex = 2;
 
     if (role) {
-      whereClause.role = { contains: role, mode: 'insensitive' };
+      queryStr += ` AND role ILIKE $${paramIndex}`;
+      countStr += ` AND role ILIKE $${paramIndex}`;
+      params.push(`%${role}%`);
+      paramIndex++;
     }
 
     if (type) {
-      whereClause.interviewType = type;
+      queryStr += ` AND "interviewType" = $${paramIndex}`;
+      countStr += ` AND "interviewType" = $${paramIndex}`;
+      params.push(type);
+      paramIndex++;
     }
 
     if (dateFrom) {
-      whereClause.startedAt = { gte: new Date(dateFrom) };
+      queryStr += ` AND "startedAt" >= $${paramIndex}`;
+      countStr += ` AND "startedAt" >= $${paramIndex}`;
+      params.push(new Date(dateFrom));
+      paramIndex++;
     }
 
-    const sessions = await fastify.prisma.session.findMany({
-      where: whereClause,
-      include: {
-        questions: {
-          include: { answer: { include: { score: true } } },
-        },
-      },
-      orderBy: { startedAt: 'desc' },
-      skip,
-      take: limit,
-    });
+    queryStr += ` ORDER BY "startedAt" DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    const queryParams = [...params, limit, offset];
 
-    const total = await fastify.prisma.session.count({ where: whereClause });
+    const sessionsRes = await fastify.db.query(queryStr, queryParams);
+    const countRes = await fastify.db.query(countStr, params);
+    const total = parseInt(countRes.rows[0].count, 10);
+
+    const sessions = sessionsRes.rows;
+
+    // Fetch questions and answers for each session
+    for (const session of sessions) {
+      const questionsRes = await fastify.db.query(
+        `SELECT q.*, a.id as "answerId", a."userId" as "answerUserId", a."answerText", a."wordCount", a."submittedAt",
+                s.id as "scoreId", s."starScore", s."techDepthScore", s."commScore", 
+                s."relevanceScore", s."confidenceScore", s."concisenessScore", s."overallScore", s."aiFeedbackJson"
+         FROM "Question" q
+         LEFT JOIN "Answer" a ON q.id = a."questionId"
+         LEFT JOIN "Score" s ON a.id = s."answerId"
+         WHERE q."sessionId" = $1
+         ORDER BY q."orderIndex" ASC`,
+        [session.id]
+      );
+
+      session.questions = questionsRes.rows.map((row) => ({
+        id: row.id,
+        sessionId: row.sessionId,
+        questionText: row.questionText,
+        questionType: row.questionType,
+        difficulty: row.difficulty,
+        orderIndex: row.orderIndex,
+        answer: row.answerId ? {
+          id: row.answerId,
+          questionId: row.id,
+          userId: row.answerUserId,
+          answerText: row.answerText,
+          wordCount: row.wordCount,
+          submittedAt: row.submittedAt,
+          score: row.scoreId ? {
+            id: row.scoreId,
+            answerId: row.answerId,
+            starScore: row.starScore,
+            techDepthScore: row.techDepthScore,
+            commScore: row.commScore,
+            relevanceScore: row.relevanceScore,
+            confidenceScore: row.confidenceScore,
+            concisenessScore: row.concisenessScore,
+            overallScore: row.overallScore,
+            aiFeedbackJson: row.aiFeedbackJson,
+          } : null,
+        } : null,
+      }));
+    }
 
     return {
       sessions,

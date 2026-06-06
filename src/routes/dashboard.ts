@@ -1,5 +1,4 @@
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 
 export default async function dashboardRoutes(fastify: FastifyInstance) {
   // Protect all dashboard routes
@@ -7,21 +6,21 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
 
   // GET /stats
   fastify.get('/stats', async (request, reply) => {
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
 
-    const user = await fastify.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const userRes = await fastify.db.query(
+      'SELECT * FROM "User" WHERE id = $1',
+      [userId]
+    );
+    const user = userRes.rows[0];
 
-    const sessions = await fastify.prisma.session.findMany({
-      where: { userId, endedAt: { not: null } },
-      orderBy: { endedAt: 'desc' },
-      include: { questions: { include: { answer: { include: { score: true } } } } },
-    });
-
+    const sessionsRes = await fastify.db.query(
+      'SELECT * FROM "Session" WHERE "userId" = $1 AND "endedAt" IS NOT NULL ORDER BY "endedAt" DESC',
+      [userId]
+    );
+    const sessions = sessionsRes.rows;
     const totalSessions = sessions.length;
 
-    // Calculate average and best scores
     const overallScores = sessions
       .map((s) => s.overallScore)
       .filter((s): s is number => s !== null);
@@ -30,27 +29,34 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
     const bestScore = overallScores.length > 0 ? Math.max(...overallScores) : 0;
 
     // Questions answered
-    const questionsAnswered = await fastify.prisma.answer.count({
-      where: { userId },
-    });
+    const countRes = await fastify.db.query(
+      'SELECT COUNT(*)::int FROM "Answer" WHERE "userId" = $1',
+      [userId]
+    );
+    const questionsAnswered = countRes.rows[0].count;
 
     // Calculate dimensions average
-    let totalStar = 0, totalTech = 0, totalComm = 0, totalRel = 0, totalConf = 0, totalConc = 0;
-    let scoreCount = 0;
+    const scoresRes = await fastify.db.query(
+      `SELECT s.* 
+       FROM "Score" s 
+       JOIN "Answer" a ON s."answerId" = a.id 
+       JOIN "Question" q ON a."questionId" = q.id 
+       JOIN "Session" se ON q."sessionId" = se.id 
+       WHERE se."userId" = $1 AND se."endedAt" IS NOT NULL`,
+      [userId]
+    );
+    const scores = scoresRes.rows;
 
-    sessions.forEach((session) => {
-      session.questions.forEach((q) => {
-        if (q.answer?.score) {
-          const s = q.answer.score;
-          totalStar += s.starScore;
-          totalTech += s.techDepthScore;
-          totalComm += s.commScore;
-          totalRel += s.relevanceScore;
-          totalConf += s.confidenceScore;
-          totalConc += s.concisenessScore;
-          scoreCount++;
-        }
-      });
+    let totalStar = 0, totalTech = 0, totalComm = 0, totalRel = 0, totalConf = 0, totalConc = 0;
+    const scoreCount = scores.length;
+
+    scores.forEach((s) => {
+      totalStar += s.starScore;
+      totalTech += s.techDepthScore;
+      totalComm += s.commScore;
+      totalRel += s.relevanceScore;
+      totalConf += s.confidenceScore;
+      totalConc += s.concisenessScore;
     });
 
     const dimensionAverages = {
@@ -62,7 +68,7 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
       conciseness: scoreCount > 0 ? totalConc / scoreCount : 0,
     };
 
-    // Calculate weak areas (score / maxScore < 0.75)
+    // Calculate weak areas
     const maxScores = {
       star: 25,
       techDepth: 25,
@@ -118,7 +124,6 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
       }
     }
 
-    // Default weak areas if user has no sessions yet
     if (weakAreas.length === 0) {
       weakAreas.push({
         dimension: 'STAR Structure',
@@ -148,7 +153,7 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
       bestScore: Math.round(bestScore * 10) / 10,
       streak: user?.streak || 0,
       questionsAnswered,
-      weakAreas: weakAreas.slice(0, 3), // return top 3 weak areas
+      weakAreas: weakAreas.slice(0, 3),
       recentSessions,
       dimensionAverages,
     };
@@ -156,23 +161,16 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
 
   // GET /score-trend
   fastify.get('/score-trend', async (request, reply) => {
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
     const query = request.query as { limit?: string };
     const limit = parseInt(query.limit || '10', 10);
 
-    const sessions = await fastify.prisma.session.findMany({
-      where: { userId, endedAt: { not: null } },
-      orderBy: { endedAt: 'asc' },
-      take: limit,
-      select: {
-        id: true,
-        overallScore: true,
-        endedAt: true,
-        role: true,
-      },
-    });
+    const trendRes = await fastify.db.query(
+      'SELECT id, "overallScore", "endedAt", role FROM "Session" WHERE "userId" = $1 AND "endedAt" IS NOT NULL ORDER BY "endedAt" ASC LIMIT $2',
+      [userId, limit]
+    );
 
-    return sessions.map((s) => ({
+    return trendRes.rows.map((s) => ({
       id: s.id,
       score: s.overallScore,
       date: s.endedAt ? new Date(s.endedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '',
@@ -182,50 +180,54 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
 
   // GET /radar-data
   fastify.get('/radar-data', async (request, reply) => {
-    const userId = request.user.sub;
+    const userId = (request.user as any).sub;
 
-    const sessions = await fastify.prisma.session.findMany({
-      where: { userId, endedAt: { not: null } },
-      include: { questions: { include: { answer: { include: { score: true } } } } },
-    });
+    // Fetch all scores for average
+    const allScoresRes = await fastify.db.query(
+      `SELECT s.* 
+       FROM "Score" s 
+       JOIN "Answer" a ON s."answerId" = a.id 
+       JOIN "Question" q ON a."questionId" = q.id 
+       JOIN "Session" se ON q."sessionId" = se.id 
+       WHERE se."userId" = $1 AND se."endedAt" IS NOT NULL`,
+      [userId]
+    );
+    const scores = allScoresRes.rows;
 
     let totalStar = 0, totalTech = 0, totalComm = 0, totalRel = 0, totalConf = 0, totalConc = 0;
-    let scoreCount = 0;
+    const scoreCount = scores.length;
 
-    sessions.forEach((session) => {
-      session.questions.forEach((q) => {
-        if (q.answer?.score) {
-          const s = q.answer.score;
-          // Scale scores to 100 for consistent radar axis formatting
-          totalStar += (s.starScore / 25) * 100;
-          totalTech += (s.techDepthScore / 25) * 100;
-          totalComm += (s.commScore / 20) * 100;
-          totalRel += (s.relevanceScore / 15) * 100;
-          totalConf += (s.confidenceScore / 10) * 100;
-          totalConc += (s.concisenessScore / 5) * 100;
-          scoreCount++;
-        }
-      });
+    scores.forEach((s) => {
+      totalStar += (s.starScore / 25) * 100;
+      totalTech += (s.techDepthScore / 25) * 100;
+      totalComm += (s.commScore / 20) * 100;
+      totalRel += (s.relevanceScore / 15) * 100;
+      totalConf += (s.confidenceScore / 10) * 100;
+      totalConc += (s.concisenessScore / 5) * 100;
     });
 
-    const currentSession = sessions[0];
-    let currentStar = 0, currentTech = 0, currentComm = 0, currentRel = 0, currentConf = 0, currentConc = 0;
-    let currentScoreCount = 0;
+    // Fetch scores for latest session
+    const currentScoresRes = await fastify.db.query(
+      `SELECT s.* 
+       FROM "Score" s 
+       JOIN "Answer" a ON s."answerId" = a.id 
+       JOIN "Question" q ON a."questionId" = q.id 
+       WHERE q."sessionId" = (SELECT id FROM "Session" WHERE "userId" = $1 AND "endedAt" IS NOT NULL ORDER BY "endedAt" DESC LIMIT 1)`,
+      [userId]
+    );
+    const currentScores = currentScoresRes.rows;
 
-    if (currentSession) {
-      currentSession.questions.forEach((q) => {
-        if (q.answer?.score) {
-          const s = q.answer.score;
-          currentStar += (s.starScore / 25) * 100;
-          currentTech += (s.techDepthScore / 25) * 100;
-          currentComm += (s.commScore / 20) * 100;
-          currentRel += (s.relevanceScore / 15) * 100;
-          currentConf += (s.confidenceScore / 10) * 100;
-          currentConc += (s.concisenessScore / 5) * 100;
-          currentScoreCount++;
-        }
-      });
-    }
+    let currentStar = 0, currentTech = 0, currentComm = 0, currentRel = 0, currentConf = 0, currentConc = 0;
+    const currentScoreCount = currentScores.length;
+
+    currentScores.forEach((s) => {
+      currentStar += (s.starScore / 25) * 100;
+      currentTech += (s.techDepthScore / 25) * 100;
+      currentComm += (s.commScore / 20) * 100;
+      currentRel += (s.relevanceScore / 15) * 100;
+      currentConf += (s.confidenceScore / 10) * 100;
+      currentConc += (s.concisenessScore / 5) * 100;
+    });
 
     const avgRadar = [
       { subject: 'STAR Structure', current: currentScoreCount > 0 ? Math.round(currentStar / currentScoreCount) : 0, average: scoreCount > 0 ? Math.round(totalStar / scoreCount) : 0 },

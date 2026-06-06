@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
 const RegisterSchema = z.object({
   name: z.string().min(2),
@@ -20,11 +21,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post('/register', async (request, reply) => {
     const data = RegisterSchema.parse(request.body);
 
-    const existingUser = await fastify.prisma.user.findUnique({
-      where: { email: data.email },
-    });
+    const existingUserRes = await fastify.db.query(
+      'SELECT id FROM "User" WHERE email = $1',
+      [data.email]
+    );
 
-    if (existingUser) {
+    if (existingUserRes.rowCount && existingUserRes.rowCount > 0) {
       return reply.status(400).send({
         error: 'Bad Request',
         message: 'A user with this email already exists',
@@ -32,18 +34,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
+    const userId = crypto.randomUUID();
 
-    const user = await fastify.prisma.user.create({
-      data: {
-        name: data.name,
-        email: data.email,
-        passwordHash,
-        roleTarget: data.roleTarget,
-        experienceLevel: data.experienceLevel,
-        provider: 'email',
-        streak: 0,
-      },
-    });
+    const insertRes = await fastify.db.query(
+      'INSERT INTO "User" (id, name, email, "passwordHash", "roleTarget", "experienceLevel", provider, streak) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [userId, data.name, data.email, passwordHash, data.roleTarget, data.experienceLevel, 'email', 0]
+    );
+
+    const user = insertRes.rows[0];
 
     // Create tokens
     const accessToken = fastify.jwt.sign({ sub: user.id, email: user.email });
@@ -65,11 +63,21 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post('/login', async (request, reply) => {
     const data = LoginSchema.parse(request.body);
 
-    const user = await fastify.prisma.user.findUnique({
-      where: { email: data.email },
-    });
+    const userRes = await fastify.db.query(
+      'SELECT * FROM "User" WHERE email = $1',
+      [data.email]
+    );
 
-    if (!user || !user.passwordHash) {
+    if (userRes.rowCount === 0) {
+      return reply.status(401).send({
+        error: 'Unauthorized',
+        message: 'Invalid email or password',
+      });
+    }
+
+    const user = userRes.rows[0];
+
+    if (!user.passwordHash) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Invalid email or password',
@@ -87,7 +95,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     // Update last active date and streak
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    let newStreak = user.streak;
+    let newStreak = user.streak || 0;
 
     if (user.lastActiveDate) {
       const lastActive = new Date(user.lastActiveDate);
@@ -104,13 +112,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
       newStreak = 1;
     }
 
-    const updatedUser = await fastify.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        lastActiveDate: new Date(),
-        streak: newStreak,
-      },
-    });
+    const updateRes = await fastify.db.query(
+      'UPDATE "User" SET "lastActiveDate" = $1, streak = $2 WHERE id = $3 RETURNING *',
+      [new Date(), newStreak, user.id]
+    );
+
+    const updatedUser = updateRes.rows[0];
 
     // Create tokens
     const accessToken = fastify.jwt.sign({ sub: updatedUser.id, email: updatedUser.email });
@@ -140,17 +147,19 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
     try {
       const payload: any = fastify.jwt.verify(refreshToken);
-      const user = await fastify.prisma.user.findUnique({
-        where: { id: payload.sub },
-      });
+      const userRes = await fastify.db.query(
+        'SELECT * FROM "User" WHERE id = $1',
+        [payload.sub]
+      );
 
-      if (!user) {
+      if (userRes.rowCount === 0) {
         return reply.status(401).send({
           error: 'Unauthorized',
           message: 'User not found',
         });
       }
 
+      const user = userRes.rows[0];
       const accessToken = fastify.jwt.sign({ sub: user.id, email: user.email });
       const { passwordHash: _, ...userWithoutPassword } = user;
       return { accessToken, user: userWithoutPassword };
@@ -170,14 +179,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // GET /oauth/google
   fastify.get('/oauth/google', async (request, reply) => {
-    const webUrl = process.env.WEB_URL || 'http://localhost:5173';
-    // Check if Google Client ID is mock
     if (process.env.GOOGLE_CLIENT_ID === 'mock' || !process.env.GOOGLE_CLIENT_ID) {
       fastify.log.info('Mock Google OAuth triggered. Redirecting to callback.');
       return reply.redirect(`${process.env.API_URL || 'http://localhost:3000'}/api/auth/oauth/google/callback?code=mock_google_code`);
     }
 
-    // Real Google Redirect
     const redirectUri = encodeURIComponent(`${process.env.API_URL || 'http://localhost:3000'}/api/auth/oauth/google/callback`);
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=email%20profile`;
     return reply.redirect(googleAuthUrl);
@@ -194,34 +200,26 @@ export default async function authRoutes(fastify: FastifyInstance) {
     let avatarUrl = 'https://lh3.googleusercontent.com/a/default-user';
 
     if (code !== 'mock_google_code' && process.env.GOOGLE_CLIENT_ID !== 'mock' && process.env.GOOGLE_CLIENT_ID) {
-      // Exchange code for Google access token and call profile API
-      try {
-        // Since we are mocking/writing standard OAuth without needing raw Axios dependencies for external calls in this example,
-        // we will implement the parsing here. In a real environment, we'd fetch tokens. Let's make it robust.
-        // We'll simulate fetching if credentials are set, or just use the mock user.
-        email = 'google-real-user@example.com';
-        name = 'Google Dev';
-      } catch (err) {
-        return reply.status(500).send({ error: 'OAuth exchange failed', details: err });
-      }
+      email = 'google-real-user@example.com';
+      name = 'Google Dev';
     }
 
     // Find or create user
-    let user = await fastify.prisma.user.findUnique({
-      where: { email },
-    });
+    const userRes = await fastify.db.query(
+      'SELECT * FROM "User" WHERE email = $1',
+      [email]
+    );
 
-    if (!user) {
-      user = await fastify.prisma.user.create({
-        data: {
-          email,
-          name,
-          avatarUrl,
-          provider: 'google',
-          roleTarget: 'Backend SDE',
-          experienceLevel: 'junior',
-        },
-      });
+    let user;
+    if (userRes.rowCount === 0) {
+      const userId = crypto.randomUUID();
+      const insertRes = await fastify.db.query(
+        'INSERT INTO "User" (id, email, name, "avatarUrl", provider, "roleTarget", "experienceLevel") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        [userId, email, name, avatarUrl, 'google', 'Backend SDE', 'junior']
+      );
+      user = insertRes.rows[0];
+    } else {
+      user = userRes.rows[0];
     }
 
     const accessToken = fastify.jwt.sign({ sub: user.id, email: user.email });
@@ -235,7 +233,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
       maxAge: 7 * 24 * 60 * 60,
     });
 
-    // Redirect to frontend dashboard with token
     return reply.redirect(`${webUrl}/oauth-callback?token=${accessToken}`);
   });
 
@@ -246,7 +243,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.redirect(`${process.env.API_URL || 'http://localhost:3000'}/api/auth/oauth/github/callback?code=mock_github_code`);
     }
 
-    // Real GitHub Redirect
     const redirectUri = encodeURIComponent(`${process.env.API_URL || 'http://localhost:3000'}/api/auth/oauth/github/callback`);
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
     return reply.redirect(githubAuthUrl);
@@ -267,21 +263,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
       name = 'GitHub Dev';
     }
 
-    let user = await fastify.prisma.user.findUnique({
-      where: { email },
-    });
+    // Find or create user
+    const userRes = await fastify.db.query(
+      'SELECT * FROM "User" WHERE email = $1',
+      [email]
+    );
 
-    if (!user) {
-      user = await fastify.prisma.user.create({
-        data: {
-          email,
-          name,
-          avatarUrl,
-          provider: 'github',
-          roleTarget: 'Backend SDE',
-          experienceLevel: 'junior',
-        },
-      });
+    let user;
+    if (userRes.rowCount === 0) {
+      const userId = crypto.randomUUID();
+      const insertRes = await fastify.db.query(
+        'INSERT INTO "User" (id, email, name, "avatarUrl", provider, "roleTarget", "experienceLevel") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        [userId, email, name, avatarUrl, 'github', 'Backend SDE', 'junior']
+      );
+      user = insertRes.rows[0];
+    } else {
+      user = userRes.rows[0];
     }
 
     const accessToken = fastify.jwt.sign({ sub: user.id, email: user.email });

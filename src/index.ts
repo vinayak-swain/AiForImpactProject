@@ -1,7 +1,7 @@
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import * as dotenv from 'dotenv';
-import prismaPlugin from './plugins/prisma.js';
+import dbPlugin from './plugins/db.js';
 import redisPlugin from './plugins/redis.js';
 import s3Plugin from './plugins/s3.js';
 import jwtPlugin from './plugins/jwt.js';
@@ -34,7 +34,7 @@ async function main() {
   });
 
   // Register Custom Plugins
-  await server.register(prismaPlugin);
+  await server.register(dbPlugin);
   await server.register(redisPlugin);
   await server.register(s3Plugin);
   await server.register(jwtPlugin);
