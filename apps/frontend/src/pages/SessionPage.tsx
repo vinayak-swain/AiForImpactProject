@@ -199,7 +199,7 @@ export const SessionPage: React.FC = () => {
       const rec = new SpeechRecognition();
       rec.continuous = true;
       rec.interimResults = true;
-      rec.lang = 'en-US';
+      rec.lang = navigator.language || 'en-US';
 
       rec.onstart = () => {
         setAiState('listening');
@@ -232,7 +232,7 @@ export const SessionPage: React.FC = () => {
         if (isVoiceActiveRef.current && !isMutedRef.current) {
           silenceTimeoutRef.current = setTimeout(() => {
             handleVoiceAutoSubmit();
-          }, 3000);
+          }, 5000); // 5s silence timeout to allow thinking
         }
       };
 
