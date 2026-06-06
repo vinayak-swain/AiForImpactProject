@@ -21,8 +21,10 @@ const inMemoryDb: { [key: string]: any[] } = {
       isPro: false,
       lastActiveDate: new Date(),
       createdAt: new Date(),
+      role: 'user',
     }
   ],
+  UserIdentity: [],
   Resume: [],
   Session: [],
   Question: [],
@@ -64,6 +66,27 @@ class MockPool {
       return { rows: matches, rowCount: matches.length };
     }
 
+    if (normalized.includes('SELECT "userId" FROM "UserIdentity" WHERE provider =')) {
+      const provider = params[0];
+      const providerId = params[1];
+      const matches = inMemoryDb.UserIdentity.filter(
+        (ui) => ui.provider === provider && ui.providerId === providerId
+      );
+      return { rows: matches, rowCount: matches.length };
+    }
+
+    if (normalized.startsWith('INSERT INTO "UserIdentity"')) {
+      const identity = {
+        id: params[0],
+        userId: params[1],
+        provider: params[2],
+        providerId: params[3],
+        createdAt: new Date(),
+      };
+      inMemoryDb.UserIdentity.push(identity);
+      return { rows: [identity], rowCount: 1 };
+    }
+
     if (normalized.startsWith('INSERT INTO "User"')) {
       let user: any = {};
       if (normalized.includes('"passwordHash"')) {
@@ -79,6 +102,7 @@ class MockPool {
           isPro: false,
           lastActiveDate: null,
           createdAt: new Date(),
+          role: params[8] || 'user',
         };
       } else {
         user = {
@@ -93,6 +117,7 @@ class MockPool {
           isPro: false,
           lastActiveDate: null,
           createdAt: new Date(),
+          role: params[7] || 'user',
         };
       }
       inMemoryDb.User.push(user);
@@ -384,6 +409,17 @@ async function dbPlugin(fastify: FastifyInstance) {
         "streak" INTEGER DEFAULT 0,
         "lastActiveDate" TIMESTAMP,
         "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "role" TEXT DEFAULT 'user';
+
+      CREATE TABLE IF NOT EXISTS "UserIdentity" (
+        "id" TEXT PRIMARY KEY,
+        "userId" TEXT REFERENCES "User"("id") ON DELETE CASCADE,
+        "provider" TEXT NOT NULL,
+        "providerId" TEXT NOT NULL,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE("provider", "providerId")
       );
 
       CREATE TABLE IF NOT EXISTS "Resume" (
