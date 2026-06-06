@@ -300,7 +300,7 @@ export const SessionPage: React.FC = () => {
           setQuestionNumber(prev => prev + 1);
 
           const ack = next.briefAcknowledgment || '';
-          const newChatItems = [];
+          const newChatItems: ChatMessage[] = [];
           if (ack) {
             newChatItems.push({ sender: 'acknowledgment', text: ack });
             setCurrentAcknowledgment(ack);
