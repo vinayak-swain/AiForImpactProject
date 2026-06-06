@@ -632,6 +632,59 @@ startxref
     }
   });
 
+  // GET /:id/ai-summary
+  fastify.get('/:id/ai-summary', async (request, reply) => {
+    const { id: sessionId } = request.params as { id: string };
+    const userId = (request.user as any).sub;
+
+    const sessionRes = await fastify.db.query(
+      'SELECT * FROM "Session" WHERE id = $1 AND "userId" = $2',
+      [sessionId, userId]
+    );
+
+    if (sessionRes.rowCount === 0) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Session not found' });
+    }
+    const session = sessionRes.rows[0];
+
+    const questionsRes = await fastify.db.query(
+      `SELECT q.id, q."questionText", s."overallScore"
+       FROM "Question" q
+       LEFT JOIN "Answer" a ON q.id = a."questionId"
+       LEFT JOIN "Score" s ON a.id = s."answerId"
+       WHERE q."sessionId" = $1 AND s."overallScore" IS NOT NULL
+       ORDER BY q."orderIndex" ASC`,
+      [sessionId]
+    );
+
+    const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    try {
+      const response = await fetch(`${aiServiceUrl}/ai/report-summary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(20000), // longer timeout for quality model
+        body: JSON.stringify({
+          session_data: {
+            role: session.role,
+            interview_type: session.interviewType,
+            overall_score: session.overallScore,
+            dimension_averages: session.dimensionAverages || {},
+            questions_and_scores: questionsRes.rows,
+          }
+        }),
+      });
+
+      if (response.ok) {
+        return await response.json();
+      } else {
+        throw new Error(`AI Service returned ${response.status}`);
+      }
+    } catch (err) {
+      fastify.log.error(err, 'Failed to fetch AI summary');
+      return reply.status(500).send({ error: 'Internal Server Error', message: 'Failed to generate AI summary' });
+    }
+  });
+
   // GET /history
   fastify.get('/history', async (request, reply) => {
     const userId = (request.user as any).sub;

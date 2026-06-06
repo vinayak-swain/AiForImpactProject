@@ -14,6 +14,7 @@ export const SummaryPage: React.FC = () => {
   const isDark = theme === 'dark';
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<(SessionDetail & { type: string; answers: any[] }) | null>(null);
+  const [aiSummary, setAiSummary] = useState<{ executive_summary: string, action_plan: string[] } | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
   // Checklist dynamic states
@@ -57,15 +58,38 @@ export const SummaryPage: React.FC = () => {
           setSession(mappedDetail);
           if (answersList.length > 0) {
             setExpandedId((answersList[0] as any).id);
-            // Construct a checklist based on weaknesses or default actions
-            const list = answersList.map((ans: any, idx: number) => ({
-              id: idx + 1,
-              text: ans.scores?.aiFeedbackJson?.topWeakness 
-                ? `Work on: ${ans.scores.aiFeedbackJson.topWeakness}`
-                : `Refine delivery structure for Question ${idx + 1}`,
-              done: false
-            }));
-            setChecklist(list);
+            
+            try {
+              const summaryData = await api.getAiReportSummary(targetId);
+              if (summaryData && summaryData.executive_summary) {
+                setAiSummary(summaryData);
+                const list = (summaryData.action_plan || []).map((text: string, idx: number) => ({
+                  id: idx + 1,
+                  text,
+                  done: false
+                }));
+                setChecklist(list);
+              } else {
+                const list = answersList.map((ans: any, idx: number) => ({
+                  id: idx + 1,
+                  text: ans.scores?.aiFeedbackJson?.topWeakness 
+                    ? `Work on: ${ans.scores.aiFeedbackJson.topWeakness}`
+                    : `Refine delivery structure for Question ${idx + 1}`,
+                  done: false
+                }));
+                setChecklist(list);
+              }
+            } catch (err) {
+              console.error('Failed to load AI summary', err);
+              const list = answersList.map((ans: any, idx: number) => ({
+                id: idx + 1,
+                text: ans.scores?.aiFeedbackJson?.topWeakness 
+                  ? `Work on: ${ans.scores.aiFeedbackJson.topWeakness}`
+                  : `Refine delivery structure for Question ${idx + 1}`,
+                done: false
+              }));
+              setChecklist(list);
+            }
           }
         }
       } catch (err) {
@@ -82,8 +106,19 @@ export const SummaryPage: React.FC = () => {
     setChecklist(prev => prev.map(item => item.id === id ? { ...item, done: !item.done } : item));
   };
 
-  const handleDownload = () => {
-    alert('Generating PDF Report... Your download will begin shortly.');
+  const handleDownload = async () => {
+    if (!sessionIdParam) return;
+    try {
+      const res = await api.getSessionReportUrl(sessionIdParam);
+      if (res && res.url) {
+        window.open(res.url, '_blank');
+      } else {
+        alert('Your PDF report is still being compiled by the backend worker. Please try again in a few seconds!');
+      }
+    } catch (err) {
+      console.error('Failed to download PDF report', err);
+      alert('Failed to obtain PDF download link. Please try again.');
+    }
   };
 
   if (loading) {
@@ -141,7 +176,7 @@ export const SummaryPage: React.FC = () => {
             onClick={() => navigate(api.getCurrentUser() ? '/dashboard' : '/')}
             className="text-2xl font-black text-primary tracking-tighter cursor-pointer"
           >
-            InterviewJoy
+            TechPrep
           </span>
           <div className="hidden md:flex gap-6 ml-8 text-sm">
             <button 
@@ -210,7 +245,7 @@ export const SummaryPage: React.FC = () => {
             <div className="bg-surface rounded-2xl p-6 border border-outline-variant shadow-lg flex flex-col gap-4">
               <h3 className="font-bold text-lg text-primary">Executive Summary</h3>
               <p className="text-sm text-on-surface-variant leading-relaxed">
-                The candidate practiced a <strong>{activeSession.type}</strong> interview session for the role of <strong>{activeSession.role}</strong>. Performance shows key strengths in logical articulation with some recommendations for technical details.
+                {aiSummary?.executive_summary || `The candidate practiced a ${activeSession.type} interview session for the role of ${activeSession.role}. Performance shows key strengths in logical articulation with some recommendations for technical details.`}
               </p>
             </div>
           </section>

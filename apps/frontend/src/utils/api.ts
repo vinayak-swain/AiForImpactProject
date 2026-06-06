@@ -528,6 +528,24 @@ export const api = {
     });
   },
 
+  async getSessionReportUrl(sessionId: string): Promise<{ url: string }> {
+    try {
+      return await request<{ url: string }>(`/sessions/${sessionId}/report`);
+    } catch (err) {
+      console.warn('API error fetching session report URL, using fallback', err);
+      return { url: '' };
+    }
+  },
+
+  async getAiReportSummary(sessionId: string): Promise<{ executive_summary: string, action_plan: string[] }> {
+    try {
+      return await request<{ executive_summary: string, action_plan: string[] }>(`/sessions/${sessionId}/ai-summary`);
+    } catch (err) {
+      console.warn('API error fetching AI report summary', err);
+      return { executive_summary: '', action_plan: [] };
+    }
+  },
+
   async savePreferences(theme: 'light' | 'dark'): Promise<{ success: boolean; theme: string }> {
     try {
       return await request<{ success: boolean; theme: string }>('/preferences', {
