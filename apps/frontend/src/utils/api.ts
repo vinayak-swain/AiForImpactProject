@@ -203,6 +203,12 @@ export const api = {
     }
   },
 
+  async fetchMe(): Promise<User> {
+    const res = await request<User>('/auth/me');
+    localStorage.setItem('currentUser', JSON.stringify(res));
+    return res;
+  },
+
   getCurrentUser(): User | null {
     const userStr = localStorage.getItem('currentUser');
     if (!userStr) return null;

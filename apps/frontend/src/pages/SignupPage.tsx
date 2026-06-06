@@ -10,7 +10,7 @@ export const SignupPage: React.FC = () => {
   const isDark = theme === 'dark';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('sde');
+  const [role, setRole] = useState('Backend SDE');
   const [experience, setExperience] = useState('Mid-Level');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -22,7 +22,7 @@ export const SignupPage: React.FC = () => {
     setError('');
 
     const expLevelMapped = experience === 'Junior' ? 'junior' : experience === 'Senior' ? 'senior' : 'mid';
-    const roleTargetMapped = role === 'sde' ? 'Software Development Engineer' : role === 'ml' ? 'ML Engineer' : 'DevOps Engineer';
+    const roleTargetMapped = role;
     const name = email.split('@')[0];
 
     try {
@@ -78,7 +78,10 @@ export const SignupPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4 mb-8">
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+                window.location.href = `${apiBase}/auth/oauth/google`;
+              }}
               className="flex items-center justify-center gap-2 py-3 px-4 rounded-full border border-outline/30 hover:border-secondary transition-all duration-200 font-medium bouncy-hover bg-surface-container-low text-on-surface text-sm"
             >
               <img 
@@ -89,7 +92,10 @@ export const SignupPage: React.FC = () => {
               <span>Google</span>
             </button>
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+                window.location.href = `${apiBase}/auth/oauth/github`;
+              }}
               className="flex items-center justify-center gap-2 py-3 px-4 rounded-full border border-outline/30 hover:border-secondary transition-all duration-200 font-medium bouncy-hover bg-surface-container-low text-on-surface text-sm"
             >
               <span className="material-symbols-outlined text-sm">terminal</span>
@@ -128,16 +134,18 @@ export const SignupPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-on-surface-variant ml-4 uppercase tracking-wider">Role Target</label>
+                <label className="text-xs font-bold text-on-surface-variant ml-4 uppercase tracking-wider">Role</label>
                 <div className="relative">
                   <select 
                     className="w-full px-6 py-4 rounded-full bg-surface-container-low border border-outline/30 focus:border-secondary focus:ring-0 transition-all outline-none appearance-none cursor-pointer text-on-surface text-sm"
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
                   >
-                    <option value="sde">SDE</option>
-                    <option value="ml">ML</option>
-                    <option value="devops">DevOps</option>
+                    <option value="Backend SDE">Backend SDE</option>
+                    <option value="Frontend SDE">Frontend SDE</option>
+                    <option value="Full Stack SDE">Full Stack SDE</option>
+                    <option value="ML Engineer">ML Engineer</option>
+                    <option value="DevOps Engineer">DevOps Engineer</option>
                   </select>
                   <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
                 </div>

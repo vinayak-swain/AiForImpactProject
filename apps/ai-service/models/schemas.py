@@ -38,7 +38,7 @@ class GenerateQuestionRequest(BaseModel):
     chat_history: Optional[List[Dict[str, Any]]] = None
 
 class GenerateQuestionResponse(BaseModel):
-    brief_acknowledgment: str = ""  # Nia's contextual reply to the candidate's last answer
+    brief_acknowledgment: str = ""  # Telusko's contextual reply to the candidate's last answer
     question_text: str
     question_type: str
     difficulty: str

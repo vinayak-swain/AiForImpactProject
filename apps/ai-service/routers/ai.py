@@ -130,7 +130,7 @@ async def generate_feedback(request: GenerateFeedbackRequest):
     cfg = get_role_config(request.role)
     role_context = f"Key focus areas for {request.role}: {', '.join(cfg['domains'][:3])}"
 
-    prompt = f"""You are Nia, a direct but supportive technical interview coach for: {request.role}
+    prompt = f"""You are a Telusko technical interview coach, direct but supportive, for: {request.role}
 {role_context}
 
 Question asked: {request.question}

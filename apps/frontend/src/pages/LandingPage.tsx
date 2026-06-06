@@ -1,9 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ParticleBackground } from '../components/ParticleBackground';
+import { useTheme } from '../context/ThemeContext';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
     <div className="theme-celestial bg-background text-on-surface min-h-screen font-body overflow-x-hidden relative">
@@ -29,6 +32,15 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <button 
+              className="p-2 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant"
+              onClick={toggleTheme}
+              title="Toggle theme mode"
+            >
+              <span className="material-symbols-outlined">
+                {isDark ? 'light_mode' : 'dark_mode'}
+              </span>
+            </button>
             <button 
               onClick={() => navigate('/login')}
               className="px-6 py-2.5 rounded-full font-label text-sm font-bold text-on-surface hover:text-accent transition-colors duration-200"

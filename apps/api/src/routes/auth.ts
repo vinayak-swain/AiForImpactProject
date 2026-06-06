@@ -132,6 +132,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // GET /me
+  fastify.get('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const userId = (request.user as any).sub;
+    const userRes = await fastify.db.query(
+      'SELECT id, name, email, "avatarUrl", "roleTarget", "experienceLevel", streak FROM "User" WHERE id = $1',
+      [userId]
+    );
+    if (userRes.rowCount === 0) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'User not found',
+      });
+    }
+    return userRes.rows[0];
+  });
+
   // POST /logout
   fastify.post('/logout', async (request, reply) => {
     reply.clearCookie('refreshToken', { path: '/' });

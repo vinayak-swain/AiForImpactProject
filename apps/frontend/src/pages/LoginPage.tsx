@@ -75,7 +75,10 @@ export const LoginPage: React.FC = () => {
           {/* Social Logins */}
           <div className="space-y-3 mb-8">
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+                window.location.href = `${apiBase}/auth/oauth/google`;
+              }}
               className="w-full flex items-center justify-center gap-3 py-3 px-6 border-2 border-outline/30 rounded-full font-bold text-on-surface hover:bg-surface-container-low transition-all duration-200 text-sm"
             >
               <img 
@@ -86,7 +89,10 @@ export const LoginPage: React.FC = () => {
               Continue with Google
             </button>
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+                window.location.href = `${apiBase}/auth/oauth/github`;
+              }}
               className="w-full flex items-center justify-center gap-3 py-3 px-6 bg-[#0d1117] text-white rounded-full font-bold hover:opacity-90 transition-all duration-200 border border-outline/30 text-sm"
             >
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">

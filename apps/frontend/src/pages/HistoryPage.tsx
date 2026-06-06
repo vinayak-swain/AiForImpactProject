@@ -65,7 +65,7 @@ export const HistoryPage: React.FC = () => {
             onClick={() => navigate(api.getCurrentUser() ? '/dashboard' : '/')}
             className="text-2xl font-black text-primary tracking-tighter cursor-pointer"
           >
-            InterviewJoy
+            TechPrep AI
           </span>
           <div className="hidden md:flex gap-6 ml-8 text-sm">
             <button 

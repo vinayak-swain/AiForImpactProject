@@ -7,6 +7,7 @@ import { SessionPage } from './pages/SessionPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { ResumePage } from './pages/ResumePage';
+import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 import { useInteractions } from './utils/interactions';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
 
         {/* Authenticated / Dashboard Routes */}
         <Route path="/dashboard" element={<DashboardPage />} />

@@ -75,9 +75,9 @@ export const SessionPage: React.FC = () => {
   }, [aiState]);
 
   // Dynamic Metadata
-  const interviewerName = "Nia";
-  const interviewerTitle = "Senior Backend Architect at Telusko";
-  const interviewerBio = "Nia has led multiple security-critical projects at Telusko. She prefers developers who understand not just how to implement solutions, but why they matter. She values clarity, scalability, and deep technical insight.";
+  const interviewerName = "Telusko";
+  const interviewerTitle = "Telusko Technical Interviewer";
+  const interviewerBio = "Your Telusko technical interviewer has led multiple high-scale and security-critical projects. They prefer developers who understand not just how to implement solutions, but why they matter. They value clarity, scalability, and deep technical insight.";
   
   const goals = React.useMemo(() => {
     const roleGoals: Record<string, string[]> = {
@@ -118,7 +118,7 @@ export const SessionPage: React.FC = () => {
   const scenarioText = React.useMemo(() => {
     const typeLabel = interviewType === 'behavioural' ? 'behavioral competency' : 
                       interviewType === 'resume_based' ? 'resume-based deep-dive' : 'technical';
-    return `You're interviewing for a ${role} role. This is a ${typeLabel} interview where Nia will ask specific questions about your experience, technical knowledge, and problem-solving approach. Be concise, use the STAR method for behavioral questions, and show deep technical understanding.`;
+    return `You're interviewing for a ${role} role. This is a ${typeLabel} interview where Telusko will ask specific questions about your experience, technical knowledge, and problem-solving approach. Be concise, use the STAR method for behavioral questions, and show deep technical understanding.`;
   }, [role, interviewType]);
 
   // Speech helper utilities
@@ -738,7 +738,7 @@ export const SessionPage: React.FC = () => {
               <div className="absolute bottom-24 max-w-2xl w-full px-4 z-10 animate-fade-in-up">
                 <div className="bg-surface/90 backdrop-blur-md p-4 rounded-2xl border border-outline-variant shadow-premium text-center">
                   <span className="text-[10px] font-black text-primary uppercase tracking-widest block mb-1">
-                    {aiState === 'speaking' ? 'Nia Speaking...' : aiState === 'listening' ? 'Listening (Speak now)' : aiState === 'evaluating' ? 'Evaluating answer...' : 'Live Transcripts'}
+                    {aiState === 'speaking' ? 'Telusko Speaking...' : aiState === 'listening' ? 'Listening (Speak now)' : aiState === 'evaluating' ? 'Evaluating answer...' : 'Live Transcripts'}
                   </span>
                   <p className="text-sm font-sans leading-relaxed text-on-surface">
                     {aiState === 'speaking' && (currentAcknowledgment
