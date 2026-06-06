@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ParticleBackground } from '../components/ParticleBackground';
 import { api } from '../utils/api';
+import { useTheme } from '../context/ThemeContext';
 
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('sde');
@@ -54,6 +57,13 @@ export const SignupPage: React.FC = () => {
             onClick={() => navigate('/')}
           >
             home
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full hover:bg-surface transition-colors duration-200 text-on-surface-variant"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <span className="material-symbols-outlined">{isDark ? 'light_mode' : 'dark_mode'}</span>
           </button>
         </div>
       </header>

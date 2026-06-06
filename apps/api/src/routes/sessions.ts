@@ -68,6 +68,7 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       const response = await fetch(`${aiServiceUrl}/ai/generate-question`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(8000), // 8s timeout — fail fast to fallback
         body: JSON.stringify({
           role: data.role,
           interview_type: data.interviewType,
@@ -149,6 +150,7 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       const response = await fetch(`${aiServiceUrl}/ai/score-answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10000), // 10s timeout for scoring
         body: JSON.stringify({
           question: question.questionText,
           answer: answerText,
@@ -262,13 +264,14 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
           const response = await fetch(`${aiServiceUrl}/ai/generate-question`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(8000), // 8s timeout — fail fast to fallback
             body: JSON.stringify({
               role: session.role,
               interview_type: session.interviewType,
               experience_level: expLevel,
               resume_summary: resumeSummary,
               previous_questions: previousQuestionsText,
-              chat_history: chatHistory,  // Full conversation for context-aware acknowledgment
+              chat_history: chatHistory,  // Full conversation for contextual memory
             }),
           });
 

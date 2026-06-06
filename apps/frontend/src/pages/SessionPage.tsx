@@ -435,6 +435,27 @@ export const SessionPage: React.FC = () => {
     }
   };
 
+  // Dedicated force-end: always terminates the session regardless of nextQuestion state.
+  // Fixes the bug where End Session button was silently no-op'd if nextQuestionRef was set.
+  const handleForceEndSession = async () => {
+    isListeningRef.current = false;
+    recognitionRef.current?.stop();
+    window.speechSynthesis.cancel();
+    if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+    setIsSubmitting(true);
+    try {
+      if (sessionId) {
+        await api.endSession(sessionId);
+      }
+      navigate(`/summary${sessionId ? `?sessionId=${sessionId}` : ''}`);
+    } catch (err) {
+      console.error('Force end session failed', err);
+      navigate('/summary');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleMuteToggle = () => {
     const nextMuted = !isMuted;
     setIsMuted(nextMuted);
@@ -470,7 +491,7 @@ export const SessionPage: React.FC = () => {
             onClick={() => navigate(api.getCurrentUser() ? '/dashboard' : '/')}
             className="text-2xl font-black text-primary tracking-tighter cursor-pointer"
           >
-            InterviewJoy
+            TechPrep AI
           </span>
           <div className="hidden md:flex gap-6 ml-8 text-sm">
             <button 
@@ -797,11 +818,12 @@ export const SessionPage: React.FC = () => {
                 {/* Red hangup phone (End early) */}
                 <button
                   onClick={() => {
-                    if (confirm('Are you sure you want to end this session? Nia will compile your performance details and overall score card.')) {
-                      handleNextOrFinish(); // Will call endSession since nextQuestionRef is null
+                    if (confirm('End this Telusko interview session? Your performance report will be compiled immediately.')) {
+                      handleForceEndSession();
                     }
                   }}
-                  className="p-3.5 bg-error hover:bg-error-container text-white rounded-full transition-all cursor-pointer shadow-lg shadow-error/25 flex items-center justify-center"
+                  disabled={isSubmitting}
+                  className="p-3.5 bg-error hover:bg-error-container text-white rounded-full transition-all cursor-pointer shadow-lg shadow-error/25 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   title="End Session"
                 >
                   <span className="material-symbols-outlined text-sm leading-none flex items-center justify-center font-bold">call_end</span>

@@ -7,7 +7,6 @@ import { SessionPage } from './pages/SessionPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { ResumePage } from './pages/ResumePage';
-import { ThemeToggle } from './components/ThemeToggle';
 import { useInteractions } from './utils/interactions';
 
 function App() {
@@ -15,7 +14,6 @@ function App() {
 
   return (
     <>
-      <ThemeToggle />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />

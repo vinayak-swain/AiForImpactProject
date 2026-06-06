@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ParticleBackground } from '../components/ParticleBackground';
 import { api } from '../utils/api';
 import type { SessionStats, ScoreTrendItem } from '../utils/api';
+import { useTheme } from '../context/ThemeContext';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
   const [timeRange, setTimeRange] = useState('Last 30 Days');
   const [stats, setStats] = useState<SessionStats | null>(null);
   const [scoreTrend, setScoreTrend] = useState<ScoreTrendItem[]>([]);
@@ -67,7 +70,7 @@ export const DashboardPage: React.FC = () => {
       {/* SideNavBar (Desktop) */}
       <aside className="fixed left-0 top-0 h-full p-4 border-r border-outline/20 w-[240px] hidden md:flex flex-col bg-surface z-40 shadow-xl">
         <div className="mb-8 px-4 cursor-pointer" onClick={() => navigate(api.getCurrentUser() ? '/dashboard' : '/')}>
-          <h1 className="text-2xl font-headline font-black text-white tracking-tight">TechPrep AI</h1>
+          <h1 className="text-2xl font-headline font-black text-on-surface tracking-tight">TechPrep AI</h1>
           <p className="text-on-surface-variant text-sm font-medium">Interview Coach</p>
         </div>
         <nav className="flex-1 space-y-2">
@@ -121,10 +124,16 @@ export const DashboardPage: React.FC = () => {
         {/* TopAppBar */}
         <header className="flex justify-between items-center w-full px-6 py-6 md:px-10 bg-background/80 backdrop-blur-md sticky top-0 z-30 border-b border-outline/10">
           <div className="flex flex-col">
-            <h2 className="font-headline text-2xl font-bold text-white">Good morning, {currentUser?.name || 'Swayam'} 👋</h2>
+            <h2 className="font-headline text-2xl font-bold text-on-surface">Good morning, {currentUser?.name || 'Swayam'} 👋</h2>
             <p className="text-on-surface-variant text-sm font-medium">Ready for today's session?</p>
           </div>
           <div className="flex items-center gap-4">
+            <button className="p-2 hover:bg-surface-container rounded-full transition-colors text-on-surface-variant"
+              onClick={toggleTheme}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              <span className="material-symbols-outlined">{isDark ? 'light_mode' : 'dark_mode'}</span>
+            </button>
             <button className="p-2 hover:bg-surface-container rounded-full transition-colors text-on-surface-variant">
               <span className="material-symbols-outlined">notifications</span>
             </button>
@@ -150,7 +159,7 @@ export const DashboardPage: React.FC = () => {
                 <span className="text-success font-bold text-sm">+12%</span>
               </div>
               <p className="text-xs font-medium text-on-surface-variant">Interviews Done</p>
-              <h3 className="text-3xl font-black text-white">{activeStats.totalSessions}</h3>
+              <h3 className="text-3xl font-black text-on-surface">{activeStats.totalSessions}</h3>
             </div>
 
             <div 
@@ -162,7 +171,7 @@ export const DashboardPage: React.FC = () => {
                 <span className="text-success font-bold text-sm">{(activeStats.avgScore / 10).toFixed(1)}</span>
               </div>
               <p className="text-xs font-medium text-on-surface-variant">Avg Score</p>
-              <h3 className="text-3xl font-black text-white">{activeStats.avgScore}<span className="text-lg font-bold">%</span></h3>
+              <h3 className="text-3xl font-black text-on-surface">{activeStats.avgScore}<span className="text-lg font-bold">%</span></h3>
             </div>
 
             <div className="bg-surface border border-white/5 p-6 rounded-2xl celestial-shadow bouncy-hover">
@@ -170,7 +179,7 @@ export const DashboardPage: React.FC = () => {
                 <span className="p-2 bg-accent/20 text-warning rounded-full material-symbols-outlined">warning</span>
               </div>
               <p className="text-xs font-medium text-on-surface-variant">Weak Spots</p>
-              <h3 className="text-3xl font-black text-white">{activeStats.weakAreas.length}</h3>
+              <h3 className="text-3xl font-black text-on-surface">{activeStats.weakAreas.length}</h3>
             </div>
 
             <div 
@@ -183,7 +192,7 @@ export const DashboardPage: React.FC = () => {
                 <span className="text-accent font-bold text-xs">Active</span>
               </div>
               <p className="text-xs font-medium text-on-surface-variant">Days Streak</p>
-              <h3 className="text-3xl font-black text-white">{streak} 🔥</h3>
+              <h3 className="text-3xl font-black text-on-surface">{streak} 🔥</h3>
             </div>
           </div>
 
@@ -192,7 +201,7 @@ export const DashboardPage: React.FC = () => {
             {/* Score Trend Line Chart */}
             <div className="lg:col-span-2 bg-surface p-6 rounded-2xl celestial-shadow relative overflow-hidden h-[340px]">
               <div className="flex justify-between items-center mb-6">
-                <h4 className="font-bold text-lg text-white">Score Trend</h4>
+                <h4 className="font-bold text-lg text-on-surface">Score Trend</h4>
                 <select 
                   className="bg-background border-none text-xs font-bold rounded-full px-4 py-2 text-on-surface focus:ring-2 focus:ring-primary cursor-pointer outline-none"
                   value={timeRange}
@@ -283,7 +292,7 @@ export const DashboardPage: React.FC = () => {
 
           {/* Focus Areas Panel */}
           <div className="space-y-4">
-            <h4 className="font-bold text-lg text-white mb-4 px-2">Focus Areas for Improvement</h4>
+            <h4 className="font-bold text-lg text-on-surface mb-4 px-2">Focus Areas for Improvement</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {activeStats.weakAreas.map((weak, idx) => {
                 const icons = ['forum', 'account_tree', 'psychology'];
@@ -302,7 +311,7 @@ export const DashboardPage: React.FC = () => {
                       <span className="material-symbols-outlined">{icon}</span>
                     </div>
                     <div>
-                      <p className="font-black text-white">{weak.dimension}</p>
+                      <p className="font-black text-on-surface">{weak.dimension}</p>
                       <p className="text-xs text-on-surface-variant font-medium select-none" title={weak.suggestion}>
                         {weak.suggestion.length > 35 ? `${weak.suggestion.slice(0, 35)}...` : weak.suggestion}
                       </p>
@@ -316,7 +325,7 @@ export const DashboardPage: React.FC = () => {
           {/* Recent Sessions Table */}
           <div className="bg-surface rounded-2xl celestial-shadow overflow-hidden border border-white/5">
             <div className="p-6 border-b border-white/5 flex justify-between items-center">
-              <h4 className="font-bold text-lg text-white">Recent Sessions</h4>
+              <h4 className="font-bold text-lg text-on-surface">Recent Sessions</h4>
               <button 
                 onClick={() => navigate('/history')}
                 className="text-success font-bold text-sm hover:underline bg-transparent border-none cursor-pointer"
@@ -342,7 +351,7 @@ export const DashboardPage: React.FC = () => {
                         <td className="px-6 py-4 text-sm font-medium">
                           {s.endedAt ? new Date(s.endedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                         </td>
-                        <td className="px-6 py-4 font-bold text-white">{s.role}</td>
+                        <td className="px-6 py-4 font-bold text-on-surface">{s.role}</td>
                         <td className="px-6 py-4">
                           <div className="flex justify-center">
                             <span className={`px-3 py-1 font-bold rounded-full text-xs ${s.overallScore && s.overallScore >= 80 ? 'bg-success/20 text-success' : 'bg-primary/40 text-on-primary'}`}>
