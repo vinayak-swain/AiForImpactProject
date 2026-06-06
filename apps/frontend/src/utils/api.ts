@@ -64,6 +64,7 @@ export interface Question {
   questionType: string;
   difficulty: string;
   orderIndex: number;
+  briefAcknowledgment?: string;
   answer?: {
     id: string;
     questionId: string;

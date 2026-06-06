@@ -10,8 +10,6 @@ export const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<SessionStats | null>(null);
   const [scoreTrend, setScoreTrend] = useState<ScoreTrendItem[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
   // Streak state that can be incremented locally too
   const [streak, setStreak] = useState(15);
 
@@ -35,8 +33,6 @@ export const DashboardPage: React.FC = () => {
         }
       } catch (err) {
         console.error('Failed to load dashboard statistics', err);
-      } finally {
-        setIsLoading(false);
       }
     }
     loadData();

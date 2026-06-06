@@ -66,7 +66,7 @@ export const ParticleBackground: React.FC<{ theme?: string }> = () => {
       
       const pSize = Math.random() * 6 + 2; // 2px to 8px
       const px = x ?? Math.random() * canvas.width;
-      const py = y ?? (isBurst ? y : Math.random() * canvas.height);
+      const py = y ?? Math.random() * canvas.height;
 
       if (isBurst) {
         // Burst particle configuration

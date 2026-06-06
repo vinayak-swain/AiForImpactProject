@@ -10,7 +10,6 @@ export const HistoryPage: React.FC = () => {
   const isDark = theme === 'dark';
   const [selectedRole, setSelectedRole] = useState('All Roles');
   const [selectedType, setSelectedType] = useState('All Types');
-  const [selectedTime, setSelectedTime] = useState('All Time');
 
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

@@ -13,7 +13,7 @@ export const SummaryPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<SessionDetail | null>(null);
+  const [session, setSession] = useState<(SessionDetail & { type: string; answers: any[] }) | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
   // Checklist dynamic states
@@ -34,11 +34,31 @@ export const SummaryPage: React.FC = () => {
 
         if (targetId) {
           const detail = await api.getSessionDetail(targetId);
-          setSession(detail);
-          if (detail.answers && detail.answers.length > 0) {
-            setExpandedId(detail.answers[0].id);
+          
+          // Map backend questions list to component's expected answers structure
+          const answersList = (detail.questions || []).map((q: any) => {
+            if (q.answer) {
+              return {
+                id: q.id,
+                questionText: q.questionText,
+                responseText: q.answer.answerText,
+                scores: q.answer.score,
+              };
+            }
+            return null;
+          }).filter(Boolean);
+
+          const mappedDetail = {
+            ...detail,
+            type: detail.interviewType,
+            answers: answersList,
+          };
+
+          setSession(mappedDetail);
+          if (answersList.length > 0) {
+            setExpandedId((answersList[0] as any).id);
             // Construct a checklist based on weaknesses or default actions
-            const list = detail.answers.map((ans, idx) => ({
+            const list = answersList.map((ans: any, idx: number) => ({
               id: idx + 1,
               text: ans.scores?.aiFeedbackJson?.topWeakness 
                 ? `Work on: ${ans.scores.aiFeedbackJson.topWeakness}`
@@ -229,7 +249,7 @@ export const SummaryPage: React.FC = () => {
               <div className="bg-surface rounded-2xl p-6 border border-outline-variant shadow-md">
                 <h4 className="font-bold text-base text-primary mb-4">Core Strengths</h4>
                 <ul className="space-y-2 text-xs font-semibold text-on-surface-variant pl-4 list-disc">
-                  {activeSession.answers.map((ans, idx) => (
+                  {activeSession.answers.map((ans: any, idx: number) => (
                     ans.scores?.aiFeedbackJson?.topStrength ? (
                       <li key={ans.id}>{ans.scores.aiFeedbackJson.topStrength}</li>
                     ) : (
@@ -245,7 +265,7 @@ export const SummaryPage: React.FC = () => {
               <h3 className="font-black text-xl mb-6 text-on-surface">Question-by-Question Review</h3>
               
               <div className="space-y-4">
-                {activeSession.answers.map((review, idx) => {
+                {activeSession.answers.map((review: any, idx: number) => {
                   const isExpanded = expandedId === review.id;
                   const scoreObj = review.scores;
                   return (
