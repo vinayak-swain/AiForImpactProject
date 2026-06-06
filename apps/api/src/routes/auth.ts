@@ -156,7 +156,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // GET /oauth/google
   fastify.get('/oauth/google', async (request, reply) => {
-    const baseUrl = process.env.API_URL || `${request.protocol}://${request.hostname}`;
+    let baseUrl = process.env.API_URL || `${request.protocol}://${request.hostname}`;
+    if (process.env.NODE_ENV === 'production' && !baseUrl.startsWith('https://') && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
+      baseUrl = baseUrl.replace(/^http:\/\//i, 'https://');
+    }
     if (process.env.GOOGLE_CLIENT_ID === 'mock' || !process.env.GOOGLE_CLIENT_ID) {
       fastify.log.info('Mock Google OAuth triggered. Redirecting to callback.');
       return reply.redirect(`${baseUrl}/api/auth/oauth/google/callback?code=mock_google_code`);
@@ -216,7 +219,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // GET /oauth/github
   fastify.get('/oauth/github', async (request, reply) => {
-    const baseUrl = process.env.API_URL || `${request.protocol}://${request.hostname}`;
+    let baseUrl = process.env.API_URL || `${request.protocol}://${request.hostname}`;
+    if (process.env.NODE_ENV === 'production' && !baseUrl.startsWith('https://') && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
+      baseUrl = baseUrl.replace(/^http:\/\//i, 'https://');
+    }
     if (process.env.GITHUB_CLIENT_ID === 'mock' || !process.env.GITHUB_CLIENT_ID) {
       fastify.log.info('Mock GitHub OAuth triggered. Redirecting to callback.');
       return reply.redirect(`${baseUrl}/api/auth/oauth/github/callback?code=mock_github_code`);

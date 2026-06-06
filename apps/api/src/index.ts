@@ -17,6 +17,7 @@ dotenv.config();
 const isProduction = process.env.NODE_ENV === 'production';
 
 const server = fastify({
+  trustProxy: true,
   logger: isProduction
     ? true
     : {
