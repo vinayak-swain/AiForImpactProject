@@ -180,6 +180,17 @@ class MockPool {
     }
 
     if (normalized.startsWith('UPDATE "Session"')) {
+      // Handle reportS3Key update separately
+      if (normalized.includes('"reportS3Key"')) {
+        const reportS3Key = params[0];
+        const id = params[1];
+        const session = inMemoryDb.Session.find((s) => s.id === id);
+        if (session) {
+          session.reportS3Key = reportS3Key;
+        }
+        return { rows: session ? [session] : [], rowCount: session ? 1 : 0 };
+      }
+      // Handle end-session update (endedAt, overallScore, grade, id)
       const endedAt = params[0];
       const overallScore = params[1];
       const grade = params[2];
@@ -226,6 +237,56 @@ class MockPool {
         (a, b) => a.orderIndex - b.orderIndex
       );
       return { rows: matches, rowCount: matches.length };
+    }
+
+    if (normalized.includes('SELECT q."questionText", a."answerText"') && normalized.includes('WHERE q."sessionId" =')) {
+      // Chat history query for AI context
+      const sessionId = params[0];
+      const questions = inMemoryDb.Question.filter((q) => q.sessionId === sessionId).sort(
+        (a, b) => a.orderIndex - b.orderIndex
+      );
+      const rows = questions.map((q) => {
+        const answer = inMemoryDb.Answer.find((a) => a.questionId === q.id);
+        return {
+          questionText: q.questionText,
+          answerText: answer?.answerText || null,
+        };
+      });
+      return { rows, rowCount: rows.length };
+    }
+
+    if (normalized.includes('SELECT q.*, a.id as "answerId"') && normalized.includes('WHERE q."sessionId" =') && normalized.includes('ORDER BY q."orderIndex" DESC LIMIT 1')) {
+      // Feedback-stream query: INNER JOIN - only return questions with both answer AND score
+      const sessionId = params[0];
+      const questions = inMemoryDb.Question.filter((q) => q.sessionId === sessionId);
+      const rows = questions
+        .map((q) => {
+          const answer = inMemoryDb.Answer.find((a) => a.questionId === q.id);
+          if (!answer) return null;
+          const score = inMemoryDb.Score.find((s) => s.answerId === answer.id);
+          if (!score) return null;
+          return {
+            ...q,
+            answerId: answer.id,
+            answerUserId: answer.userId,
+            answerText: answer.answerText,
+            wordCount: answer.wordCount,
+            submittedAt: answer.submittedAt,
+            scoreId: score.id,
+            starScore: score.starScore,
+            techDepthScore: score.techDepthScore,
+            commScore: score.commScore,
+            relevanceScore: score.relevanceScore,
+            confidenceScore: score.confidenceScore,
+            concisenessScore: score.concisenessScore,
+            overallScore: score.overallScore,
+            aiFeedbackJson: score.aiFeedbackJson,
+          };
+        })
+        .filter(Boolean)
+        .sort((a: any, b: any) => b.orderIndex - a.orderIndex)
+        .slice(0, 1);
+      return { rows, rowCount: rows.length };
     }
 
     if (normalized.includes('SELECT q.*, a.id as "answerId"') && normalized.includes('WHERE q."sessionId" =')) {
@@ -313,25 +374,49 @@ class MockPool {
     }
 
     // --- DASHBOARD / STATS QUERIES ---
-    if (normalized.includes('SELECT COUNT(*) as "totalSessions"') && normalized.includes('FROM "Session" WHERE "userId" =')) {
+    if (normalized.includes('SELECT COUNT(*)::int FROM "Answer" WHERE "userId" =')) {
       const userId = params[0];
-      const sessions = inMemoryDb.Session.filter((s) => s.userId === userId && s.endedAt !== null);
-      const totalSessions = sessions.length;
-      
-      const scores = sessions.map((s) => s.overallScore).filter(Boolean);
-      const averageScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-      
-      const answers = inMemoryDb.Answer.filter((a) => a.userId === userId);
-      const totalQuestionsAnswered = answers.length;
-      
+      const count = inMemoryDb.Answer.filter((a) => a.userId === userId).length;
+      return { rows: [{ count }], rowCount: 1 };
+    }
+
+    if (normalized.includes('SELECT s.* FROM "Score" s JOIN "Answer" a ON s."answerId" = a.id JOIN "Question" q ON a."questionId" = q.id JOIN "Session" se ON q."sessionId" = se.id WHERE se."userId" =') && normalized.includes('se."endedAt" IS NOT NULL')) {
+      const userId = params[0];
+      const userSessions = inMemoryDb.Session.filter(s => s.userId === userId && s.endedAt !== null).map(s => s.id);
+      const userQuestions = inMemoryDb.Question.filter(q => userSessions.includes(q.sessionId)).map(q => q.id);
+      const userAnswers = inMemoryDb.Answer.filter(a => userQuestions.includes(a.questionId)).map(a => a.id);
+      const userScores = inMemoryDb.Score.filter(s => userAnswers.includes(s.answerId));
+      return { rows: userScores, rowCount: userScores.length };
+    }
+
+    if (normalized.includes('SELECT id, "overallScore", "endedAt", role FROM "Session" WHERE "userId" =') && normalized.includes('ORDER BY "endedAt" ASC LIMIT')) {
+      const userId = params[0];
+      const limit = params[1] || 10;
+      const sessions = inMemoryDb.Session.filter((s) => s.userId === userId && s.endedAt !== null)
+        .sort((a, b) => a.endedAt.getTime() - b.endedAt.getTime())
+        .slice(0, limit);
       return {
-        rows: [{
-          totalSessions: totalSessions.toString(),
-          averageScore: averageScore.toString(),
-          totalQuestionsAnswered: totalQuestionsAnswered.toString(),
-        }],
-        rowCount: 1,
+        rows: sessions.map(s => ({
+          id: s.id,
+          overallScore: s.overallScore,
+          endedAt: s.endedAt,
+          role: s.role
+        })),
+        rowCount: sessions.length
       };
+    }
+
+    if (normalized.includes('SELECT s.* FROM "Score" s JOIN "Answer" a ON s."answerId" = a.id JOIN "Question" q ON a."questionId" = q.id WHERE q."sessionId" = (SELECT id FROM "Session" WHERE "userId" =')) {
+      const userId = params[0];
+      const latestSession = inMemoryDb.Session.filter(s => s.userId === userId && s.endedAt !== null)
+        .sort((a,b) => b.endedAt.getTime() - a.endedAt.getTime())[0];
+      if (!latestSession) {
+        return { rows: [], rowCount: 0 };
+      }
+      const qIds = inMemoryDb.Question.filter(q => q.sessionId === latestSession.id).map(q => q.id);
+      const aIds = inMemoryDb.Answer.filter(a => qIds.includes(a.questionId)).map(a => a.id);
+      const scores = inMemoryDb.Score.filter(s => aIds.includes(s.answerId));
+      return { rows: scores, rowCount: scores.length };
     }
 
     if (normalized.includes('SELECT "startedAt", "overallScore" FROM "Session"')) {

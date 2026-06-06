@@ -22,10 +22,10 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
     const totalSessions = sessions.length;
 
     const overallScores = sessions
-      .map((s) => s.overallScore)
-      .filter((s): s is number => s !== null);
+      .map((s: any) => s.overallScore)
+      .filter((s: any): s is number => s !== null);
 
-    const avgScore = overallScores.length > 0 ? overallScores.reduce((a, b) => a + b, 0) / overallScores.length : 0;
+    const avgScore = overallScores.length > 0 ? overallScores.reduce((a: number, b: number) => a + b, 0) / overallScores.length : 0;
     const bestScore = overallScores.length > 0 ? Math.max(...overallScores) : 0;
 
     // Questions answered
@@ -50,7 +50,7 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
     let totalStar = 0, totalTech = 0, totalComm = 0, totalRel = 0, totalConf = 0, totalConc = 0;
     const scoreCount = scores.length;
 
-    scores.forEach((s) => {
+    scores.forEach((s: any) => {
       totalStar += s.starScore;
       totalTech += s.techDepthScore;
       totalComm += s.commScore;
@@ -138,7 +138,7 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
     }
 
     // Recent sessions (last 5)
-    const recentSessions = sessions.slice(0, 5).map((s) => ({
+    const recentSessions = sessions.slice(0, 5).map((s: any) => ({
       id: s.id,
       role: s.role,
       interviewType: s.interviewType,
@@ -170,7 +170,7 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
       [userId, limit]
     );
 
-    return trendRes.rows.map((s) => ({
+    return trendRes.rows.map((s: any) => ({
       id: s.id,
       score: s.overallScore,
       date: s.endedAt ? new Date(s.endedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '',
@@ -197,7 +197,7 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
     let totalStar = 0, totalTech = 0, totalComm = 0, totalRel = 0, totalConf = 0, totalConc = 0;
     const scoreCount = scores.length;
 
-    scores.forEach((s) => {
+    scores.forEach((s: any) => {
       totalStar += (s.starScore / 25) * 100;
       totalTech += (s.techDepthScore / 25) * 100;
       totalComm += (s.commScore / 20) * 100;
@@ -220,7 +220,7 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
     let currentStar = 0, currentTech = 0, currentComm = 0, currentRel = 0, currentConf = 0, currentConc = 0;
     const currentScoreCount = currentScores.length;
 
-    currentScores.forEach((s) => {
+    currentScores.forEach((s: any) => {
       currentStar += (s.starScore / 25) * 100;
       currentTech += (s.techDepthScore / 25) * 100;
       currentComm += (s.commScore / 20) * 100;
