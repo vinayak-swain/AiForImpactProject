@@ -14,16 +14,20 @@ import { setupErrorHandler } from './utils/errors.js';
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const server = fastify({
-  logger: {
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        translateTime: 'HH:MM:ss Z',
-        ignore: 'pid,hostname',
+  logger: isProduction
+    ? true
+    : {
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            translateTime: 'HH:MM:ss Z',
+            ignore: 'pid,hostname',
+          },
+        },
       },
-    },
-  },
 });
 
 async function main() {
