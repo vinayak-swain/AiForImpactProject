@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - TechPrep AI</title>
+<!-- Google Fonts: DM Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#212A31",
+                        "surface": "#2E3944",
+                        "primary": "#124E66",
+                        "secondary": "#E64833",
+                        "on-background": "#D3D9D4",
+                        "on-surface": "#D3D9D4",
+                        "on-surface-variant": "#90AEAD",
+                        "outline-variant": "#4E5D6C",
+                        "surface-container-low": "#37434F",
+                        "surface-container-lowest": "#2E3944",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#E64833"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["DM Sans"],
+                        "display": ["DM Sans"],
+                        "body": ["DM Sans"],
+                        "label": ["DM Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'DM Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fluid-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: #212A31;
+        }
+        .bouncy-hover {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bouncy-hover:hover {
+            transform: scale(1.02);
+        }
+        .celestial-shadow {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        .cta-shadow {
+            box-shadow: 0 4px 14px rgba(18, 78, 102, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- Fluid Particle Background -->
+<canvas class="fluid-canvas" id="FluidParticleBackground"></canvas>
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-6 py-4 fixed top-0 left-0 z-50 bg-transparent">
+<div class="text-2xl font-black text-secondary cursor-pointer transition-all duration-300 ease-out hover:scale-110">
+            TechPrep AI
+        </div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant p-2 rounded-full hover:bg-surface transition-colors duration-200" data-icon="light_mode" id="theme-toggle">
+                light_mode
+            </button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex items-center justify-center px-4 pt-24 pb-12">
+<div class="centered-auth-card w-full max-w-md bg-surface p-8 md:p-10 rounded-lg celestial-shadow bouncy-hover">
+<!-- Welcome Header -->
+<div class="text-center mb-8">
+<h1 class="text-3xl font-bold text-on-surface mb-2">Welcome back</h1>
+<p class="text-on-surface-variant font-medium">Login to continue your interview prep</p>
+</div>
+<!-- Social Login Buttons -->
+<div class="space-y-3 mb-8">
+<button class="google-oauth-button w-full flex items-center justify-center gap-3 py-3 px-6 border-2 border-outline-variant rounded-full font-bold text-on-surface hover:bg-surface-container-low transition-all duration-200">
+<img alt="Google Logo" class="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH-TWCAqiLfVZ_mJAq6hi24jwtspZNiIkzIc-MBAd4qVKvjCLeQJIBT7RwTB0lnxbFS1tEGICAmYARutis_MvH9lorwHLKihUDCY0m4sh6cz3cAYTsnidFSdKSeGMHoJU3FZJHePjQ8tk3P5744XRt5CAXCy4QtAcdS2S66SHdWRW6XBjARAijQjmdJ-P2Pvd2hbygJYojstaYDakWJ3mOoPyzrCGae_M9GYMIwMmOjGHIy869QZF0bgn9TO5Ger6EAFxyKT5AgF8"/>
+                    Continue with Google
+                </button>
+<button class="github-oauth-button w-full flex items-center justify-center gap-3 py-3 px-6 bg-[#0d1117] text-white rounded-full font-bold hover:opacity-90 transition-all duration-200 border border-outline-variant/30">
+<svg class="w-5 h-5 fill-current" viewbox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path></svg>
+                    Continue with GitHub
+                </button>
+</div>
+<!-- Divider -->
+<div class="relative mb-8 flex items-center justify-center">
+<div class="border-t border-outline-variant w-full"></div>
+<span class="absolute bg-surface px-4 text-on-surface-variant font-bold text-sm">or</span>
+</div>
+<!-- Login Form -->
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="block text-sm font-bold text-on-surface ml-2" for="email">Email Address</label>
+<input class="w-full px-6 py-3 rounded-full border-2 border-outline-variant focus:border-secondary focus:ring-4 focus:ring-secondary/20 bg-surface-container-low transition-all outline-none text-on-surface placeholder:text-on-surface-variant/40" id="email" placeholder="hello@example.com" type="email"/>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center px-2">
+<label class="text-sm font-bold text-on-surface" for="password">Password</label>
+<a class="text-xs font-bold text-secondary hover:underline" href="#">Forgot?</a>
+</div>
+<input class="w-full px-6 py-3 rounded-full border-2 border-outline-variant focus:border-secondary focus:ring-4 focus:ring-secondary/20 bg-surface-container-low transition-all outline-none text-on-surface placeholder:text-on-surface-variant/40" id="password" placeholder="••••••••" type="password"/>
+</div>
+<button class="w-full py-4 bg-primary text-white font-black rounded-full text-lg cta-shadow hover:brightness-110 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2" type="submit">
+                    Login
+                    <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<!-- Footer Link -->
+<div class="mt-8 text-center">
+<p class="text-on-surface-variant font-medium">
+                    Don't have an account? 
+                    <a class="text-secondary font-bold hover:underline ml-1" href="#">Sign up</a>
+</p>
+</div>
+</div>
+</main>
+<!-- Footer Component -->
+<footer class="flex flex-col md:flex-row justify-between items-center w-full px-6 py-8 mt-auto bg-transparent">
+<div class="text-lg font-bold text-secondary mb-4 md:mb-0">TechPrep AI</div>
+<div class="flex gap-6 mb-4 md:mb-0">
+<a class="font-body text-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Privacy</a>
+<a class="font-body text-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Terms</a>
+<a class="font-body text-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Support</a>
+</div>
+<div class="font-body text-sm text-on-surface-variant/60">© 2024 TechPrep AI. Celestial Intelligence Edition.</div>
+</footer>
+<script>
+        // Fluid Particle Background Animation
+        const canvas = document.getElementById('FluidParticleBackground');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 8 + 2;
+                this.speedX = Math.random() * 0.4 - 0.2;
+                this.speedY = Math.random() * 0.4 - 0.2;
+                // Colors: #D3D9D4 and #90AEAD
+                const colors = ['#D3D9D4', '#90AEAD', '#124E66'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.opacity = Math.random() * 0.2 + 0.05;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.fill();
+            }
+        }
+
+        function createParticles() {
+            const particleCount = Math.floor((canvas.width * canvas.height) / 12000);
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            initCanvas();
+            createParticles();
+        });
+
+        initCanvas();
+        createParticles();
+        animate();
+
+        // Dark Mode Toggle Logic
+        const themeBtn = document.getElementById('theme-toggle');
+        themeBtn.addEventListener('click', () => {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                themeBtn.innerText = 'dark_mode';
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                themeBtn.innerText = 'light_mode';
+            }
+        });
+    </script>
+</body></html>

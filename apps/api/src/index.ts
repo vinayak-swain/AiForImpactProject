@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import resumeRoutes from './routes/resumes.js';
 import sessionRoutes from './routes/sessions.js';
 import dashboardRoutes from './routes/dashboard.js';
+import preferenceRoutes from './routes/preferences.js';
 import { setupErrorHandler } from './utils/errors.js';
 
 dotenv.config();
@@ -28,7 +29,15 @@ const server = fastify({
 async function main() {
   // Register CORS
   await server.register(cors, {
-    origin: process.env.WEB_URL || 'http://localhost:5173',
+    origin: (origin, cb) => {
+      // Allow any localhost port for development, or the configured WEB_URL
+      const allowedOrigin = process.env.WEB_URL || 'http://localhost:5173';
+      if (!origin || origin === allowedOrigin || /^http:\/\/localhost:\d+$/.test(origin)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Not allowed by CORS'), false);
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });
@@ -47,6 +56,7 @@ async function main() {
   await server.register(resumeRoutes, { prefix: '/api/resumes' });
   await server.register(sessionRoutes, { prefix: '/api/sessions' });
   await server.register(dashboardRoutes, { prefix: '/api/dashboard' });
+  await server.register(preferenceRoutes, { prefix: '/api/preferences' });
 
   // Health check route
   server.get('/health', async () => {

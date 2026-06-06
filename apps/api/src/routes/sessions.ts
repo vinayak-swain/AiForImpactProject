@@ -58,10 +58,11 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
 
     // Call AI service to generate the first question
     const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-    let questionText = 'Tell me about yourself and your background.';
+    let questionText = `Hello! I'm Nia, your interviewer today. Let's dive right in. Can you start by introducing yourself and telling me what draws you to the ${data.role} role?`;
     let questionType = data.interviewType;
-    let difficulty = 'medium';
-    let followUpHint = 'Ask them to elaborate on their technical achievements.';
+    let difficulty = 'easy';
+    let followUpHint = 'Ask them to elaborate on their most relevant technical experience.';
+    let firstAcknowledgment = '';
 
     try {
       const response = await fetch(`${aiServiceUrl}/ai/generate-question`, {
@@ -73,6 +74,7 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
           experience_level: user?.experienceLevel || 'junior',
           resume_summary: resumeSummary || null,
           previous_questions: [],
+          chat_history: [],  // Empty for first question
         }),
       });
 
@@ -82,6 +84,7 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
         questionType = questionData.question_type || questionType;
         difficulty = questionData.difficulty || difficulty;
         followUpHint = questionData.follow_up_hint || followUpHint;
+        firstAcknowledgment = questionData.brief_acknowledgment || '';
       }
     } catch (err) {
       fastify.log.error(err, 'Failed to fetch question from AI service. Using fallback.');
@@ -103,7 +106,10 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
 
     return {
       sessionId,
-      firstQuestion: questionRes.rows[0],
+      firstQuestion: {
+        ...questionRes.rows[0],
+        briefAcknowledgment: firstAcknowledgment,
+      },
     };
   });
 
@@ -130,7 +136,7 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
     );
     const questions = questionsRes.rows;
 
-    const question = questions.find((q) => q.id === questionId);
+    const question = questions.find((q: any) => q.id === questionId);
     if (!question) {
       return reply.status(404).send({ error: 'Not Found', message: 'Question not found' });
     }
@@ -213,81 +219,89 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       ]
     );
 
-    // Check if we need to generate next question
-    const currentQuestionCount = questions.length;
-    let nextQuestion = null;
+      // Check if we need to generate next question (up to 8 questions for a realistic interview)
+      const currentQuestionCount = questions.length;
+      const MAX_QUESTIONS = 8;
+      let nextQuestion = null;
 
-    if (currentQuestionCount < 5) {
-      let nextQuestionText = 'Could you describe another project where you faced a similar challenge?';
-      let nextQuestionType = session.interviewType;
-      let nextDifficulty = 'medium';
-      let nextFollowUpHint = 'Probe for concrete results.';
+      if (currentQuestionCount < MAX_QUESTIONS) {
+        let nextQuestionText = 'Can you walk me through another challenging project you worked on recently?';
+        let nextQuestionType = session.interviewType;
+        let nextDifficulty = 'medium';
+        let nextFollowUpHint = 'Probe for concrete results and individual ownership.';
+        let briefAcknowledgment = '';
 
-      try {
-        const previousQuestionsText = questions.map((q) => q.questionText);
-        
-        // Grab latest resume for context
-        const resumeRes = await fastify.db.query(
-          'SELECT "parsedJson" FROM "Resume" WHERE "userId" = $1 ORDER BY "uploadedAt" DESC LIMIT 1',
-          [userId]
-        );
-        const resumeSummary = resumeRes.rowCount ? JSON.stringify(resumeRes.rows[0].parsedJson) : null;
+        try {
+          const previousQuestionsText = questions.map((q: any) => q.questionText);
 
-        // User experience level
-        const userRes = await fastify.db.query('SELECT "experienceLevel" FROM "User" WHERE id = $1', [userId]);
-        const expLevel = userRes.rows[0]?.experienceLevel || 'junior';
+          // Grab latest resume for context
+          const resumeRes = await fastify.db.query(
+            'SELECT "parsedJson" FROM "Resume" WHERE "userId" = $1 ORDER BY "uploadedAt" DESC LIMIT 1',
+            [userId]
+          );
+          const resumeSummary = resumeRes.rowCount ? JSON.stringify(resumeRes.rows[0].parsedJson) : null;
 
-        // Fetch the conversation history so far (questions and answers)
-        const historyRes = await fastify.db.query(
-          `SELECT q."questionText", a."answerText" 
-           FROM "Question" q 
-           LEFT JOIN "Answer" a ON q.id = a."questionId" 
-           WHERE q."sessionId" = $1 
-           ORDER BY q."orderIndex" ASC`,
-          [sessionId]
-        );
-        const chatHistory = historyRes.rows.map(row => ({
-          question: row.questionText,
-          answer: row.answerText || ''
-        }));
+          // User experience level
+          const userRes = await fastify.db.query('SELECT "experienceLevel" FROM "User" WHERE id = $1', [userId]);
+          const expLevel = userRes.rows[0]?.experienceLevel || 'junior';
 
-        const response = await fetch(`${aiServiceUrl}/ai/generate-question`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            role: session.role,
-            interview_type: session.interviewType,
-            experience_level: expLevel,
-            resume_summary: resumeSummary,
-            previous_questions: previousQuestionsText,
-            chat_history: chatHistory,
-          }),
-        });
+          // Fetch full conversation history (questions + answers) for AI context
+          const historyRes = await fastify.db.query(
+            `SELECT q."questionText", a."answerText"
+             FROM "Question" q
+             LEFT JOIN "Answer" a ON q.id = a."questionId"
+             WHERE q."sessionId" = $1
+             ORDER BY q."orderIndex" ASC`,
+            [sessionId]
+          );
+          const chatHistory = historyRes.rows.map((row: any) => ({
+            question: row.questionText,
+            answer: row.answerText || ''
+          }));
 
-        if (response.ok) {
-          const qData: any = await response.json();
-          nextQuestionText = qData.question_text || nextQuestionText;
-          nextQuestionType = qData.question_type || nextQuestionType;
-          nextDifficulty = qData.difficulty || nextDifficulty;
-          nextFollowUpHint = qData.follow_up_hint || nextFollowUpHint;
+          const response = await fetch(`${aiServiceUrl}/ai/generate-question`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              role: session.role,
+              interview_type: session.interviewType,
+              experience_level: expLevel,
+              resume_summary: resumeSummary,
+              previous_questions: previousQuestionsText,
+              chat_history: chatHistory,  // Full conversation for context-aware acknowledgment
+            }),
+          });
+
+          if (response.ok) {
+            const qData: any = await response.json();
+            nextQuestionText = qData.question_text || nextQuestionText;
+            nextQuestionType = qData.question_type || nextQuestionType;
+            nextDifficulty = qData.difficulty || nextDifficulty;
+            nextFollowUpHint = qData.follow_up_hint || nextFollowUpHint;
+            briefAcknowledgment = qData.brief_acknowledgment || '';  // Nia's contextual reply
+          }
+        } catch (err) {
+          fastify.log.error(err, 'Failed to fetch next question. Using fallback.');
         }
-      } catch (err) {
-        fastify.log.error(err, 'Failed to fetch next question. Using fallback.');
+
+        const nextQuestionId = crypto.randomUUID();
+        const insertQRes = await fastify.db.query(
+          'INSERT INTO "Question" (id, "sessionId", "questionText", "questionType", difficulty, "orderIndex") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+          [nextQuestionId, sessionId, nextQuestionText, nextQuestionType, nextDifficulty, currentQuestionCount]
+        );
+
+        // Attach the brief_acknowledgment to the question object returned to frontend
+        nextQuestion = {
+          ...insertQRes.rows[0],
+          briefAcknowledgment: briefAcknowledgment,
+        };
       }
 
-      const nextQuestionId = crypto.randomUUID();
-      const insertQRes = await fastify.db.query(
-        'INSERT INTO "Question" (id, "sessionId", "questionText", "questionType", difficulty, "orderIndex") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-        [nextQuestionId, sessionId, nextQuestionText, nextQuestionType, nextDifficulty, currentQuestionCount]
-      );
-      nextQuestion = insertQRes.rows[0];
-    }
-
-    return {
-      scoreId,
-      scores: scoreRes.rows[0],
-      nextQuestion,
-    };
+      return {
+        scoreId,
+        scores: scoreRes.rows[0],
+        nextQuestion,
+      };
   });
 
   // GET /:id/feedback-stream (SSE)
@@ -405,8 +419,8 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
       [sessionId]
     );
 
-    const scores = scoresRes.rows.map((r) => r.overallScore);
-    const avgScore = scores.length > 0 ? scores.reduce((sum, s) => sum + s, 0) / scores.length : 0;
+    const scores = scoresRes.rows.map((r: any) => r.overallScore);
+    const avgScore = scores.length > 0 ? scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length : 0;
 
     let grade = 'F';
     if (avgScore >= 90) grade = 'A';
@@ -556,7 +570,7 @@ startxref
       [sessionId]
     );
 
-    const questions = questionsRes.rows.map((row) => ({
+    const questions = questionsRes.rows.map((row: any) => ({
       id: row.id,
       sessionId: row.sessionId,
       questionText: row.questionText,
@@ -671,7 +685,7 @@ startxref
         [session.id]
       );
 
-      session.questions = questionsRes.rows.map((row) => ({
+      session.questions = questionsRes.rows.map((row: any) => ({
         id: row.id,
         sessionId: row.sessionId,
         questionText: row.questionText,
