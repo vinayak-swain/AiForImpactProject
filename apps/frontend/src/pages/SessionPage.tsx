@@ -232,7 +232,7 @@ export const SessionPage: React.FC = () => {
         if (isVoiceActiveRef.current && !isMutedRef.current) {
           silenceTimeoutRef.current = setTimeout(() => {
             handleVoiceAutoSubmit();
-          }, 5000); // 5s silence timeout to allow thinking
+          }, 15000); // 15s silence timeout to prevent premature pause/submit
         }
       };
 
@@ -287,6 +287,34 @@ export const SessionPage: React.FC = () => {
         ...prev,
         { sender: 'candidate', text, scores: res.scores }
       ]);
+      
+      // Auto-progress in voice mode
+      setTimeout(() => {
+        if (res.nextQuestion) {
+          const next = res.nextQuestion;
+          setCurrentQuestion(next);
+          setNextQuestionRef(null);
+          setResponseText('');
+          setActiveScore(null);
+          setShowFeedbackPanel(false);
+          setQuestionNumber(prev => prev + 1);
+
+          const ack = next.briefAcknowledgment || '';
+          const newChatItems = [];
+          if (ack) {
+            newChatItems.push({ sender: 'acknowledgment', text: ack });
+            setCurrentAcknowledgment(ack);
+          } else {
+            setCurrentAcknowledgment('');
+          }
+          newChatItems.push({ sender: 'ai', text: next.questionText });
+          
+          setChatHistory((prev) => [...prev, ...newChatItems]);
+        } else {
+          handleForceEndSession();
+        }
+      }, 3000); // 3 seconds to read score before next question
+
     } catch (err) {
       console.error('Failed to submit answer via voice', err);
       setAiState('listening');
@@ -484,7 +512,14 @@ export const SessionPage: React.FC = () => {
   const handleManualSubmitText = (e: React.FormEvent) => {
     e.preventDefault();
     if (responseText.trim().length < 10 || isSubmitting) return;
-    handleAnalyzeAnswer();
+    
+    if (isVoiceMode) {
+      isListeningRef.current = false;
+      recognitionRef.current?.stop();
+      submitAnswerViaVoice(responseText);
+    } else {
+      handleAnalyzeAnswer();
+    }
   };
 
   return (
@@ -570,13 +605,20 @@ export const SessionPage: React.FC = () => {
             <div className="space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-on-surface ml-2">Target Job Role</label>
-                <input 
-                  type="text" 
+                <select 
                   className="w-full px-6 py-3 rounded-full border-2 border-outline-variant focus:border-primary bg-surface-container transition-all outline-none text-on-surface text-sm"
-                  placeholder="e.g. Senior Frontend Engineer"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                />
+                >
+                  <option value="Senior Frontend Engineer">Senior Frontend Engineer</option>
+                  <option value="Backend SDE">Backend SDE</option>
+                  <option value="Full Stack SDE">Full Stack SDE</option>
+                  <option value="ML Engineer">ML Engineer</option>
+                  <option value="Data Scientist">Data Scientist</option>
+                  <option value="Java Developer">Java Developer</option>
+                  <option value="Mobile Engineer">Mobile Engineer</option>
+                  <option value="Product Manager">Product Manager</option>
+                </select>
               </div>
 
               <div className="space-y-1">

@@ -35,11 +35,11 @@ async function main() {
   await server.register(cors, {
     origin: (origin, cb) => {
       // Allow any localhost port for development, or the configured WEB_URL
-      const allowedOrigin = process.env.WEB_URL || 'http://localhost:5173';
-      if (!origin || origin === allowedOrigin || /^http:\/\/localhost:\d+$/.test(origin)) {
+      const allowedOrigin = (process.env.WEB_URL || 'http://localhost:5173').replace(/\/$/, '');
+      if (!origin || (origin && origin.startsWith(allowedOrigin)) || /^http:\/\/localhost:\d+$/.test(origin)) {
         cb(null, true);
       } else {
-        cb(new Error('Not allowed by CORS'), false);
+        cb(new Error(`Not allowed by CORS: ${origin}`), false);
       }
     },
     credentials: true,
