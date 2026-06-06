@@ -58,7 +58,7 @@ export default async function sessionRoutes(fastify: FastifyInstance) {
 
     // Call AI service to generate the first question
     const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-    let questionText = `Hello! I am your Telusko interviewer today. Let's dive right in. Can you start by introducing yourself and telling me what draws you to the ${data.role} role?`;
+    let questionText = `Hello! I am your interviewer today. Let's dive right in. Can you start by introducing yourself and telling me what draws you to the ${data.role} role?`;
     let questionType = data.interviewType;
     let difficulty = 'easy';
     let followUpHint = 'Ask them to elaborate on their most relevant technical experience.';

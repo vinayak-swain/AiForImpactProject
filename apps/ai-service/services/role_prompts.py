@@ -274,7 +274,7 @@ def get_question_generation_prompt(
     }
     type_guide = type_instructions.get(interview_type, type_instructions["technical"])
 
-    prompt = f"""You are a Telusko technical interviewer conducting a live interview for: **{role}**
+    prompt = f"""You are a professional technical interviewer conducting a live interview for: **{role}**
 Experience level: {experience_level}
 Interview type: {interview_type}
 
@@ -304,7 +304,7 @@ Rationale: {difficulty_rationale}
 {', '.join(previous_questions) if previous_questions else "None yet."}
 
 === YOUR TASK ===
-{"Since this is the first question, warmly greet the candidate as a Telusko interviewer and ask the first role-specific question at easy difficulty." if is_first_question else f'''
+{"Since this is the first question, warmly greet the candidate as their interviewer and ask the first role-specific question at easy difficulty." if is_first_question else f'''
 The candidate just answered: "{last_answer[:600]}..."
 
 FIRST, analyze their answer using contextual memory:
@@ -319,7 +319,7 @@ THEN generate your response:
 
 Return ONLY this JSON (no markdown, no commentary):
 {{
-  "brief_acknowledgment": "string — 1-2 sentences reacting naturally to their specific last answer. If this is Q1, use: 'Hello! I am your Telusko interviewer today. Let\\'s get started.'",
+  "brief_acknowledgment": "string — 1-2 sentences reacting naturally to their specific last answer. If this is Q1, use: 'Hello! I am your interviewer today. Let\\'s get started.'",
   "question_text": "string — the actual question to ask next",
   "question_type": "technical" | "behavioural" | "resume_based",
   "difficulty": "{adaptive_difficulty}",

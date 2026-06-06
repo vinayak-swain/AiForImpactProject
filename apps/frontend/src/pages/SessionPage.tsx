@@ -35,7 +35,7 @@ export const SessionPage: React.FC = () => {
   const [nextQuestionRef, setNextQuestionRef] = useState<Question | null>(null);
 
   // Voice & UI States
-  const [isVoiceMode, setIsVoiceMode] = useState(true); // Default to voice mode for wow effect
+  const [isVoiceMode, setIsVoiceMode] = useState(false); // Default to text/chat mode
   const [isMuted, setIsMuted] = useState(false);
   const [showCaptions, setShowCaptions] = useState(true);
   const [showChatLog, setShowChatLog] = useState(false);
@@ -75,9 +75,9 @@ export const SessionPage: React.FC = () => {
   }, [aiState]);
 
   // Dynamic Metadata
-  const interviewerName = "Telusko";
-  const interviewerTitle = "Telusko Technical Interviewer";
-  const interviewerBio = "Your Telusko technical interviewer has led multiple high-scale and security-critical projects. They prefer developers who understand not just how to implement solutions, but why they matter. They value clarity, scalability, and deep technical insight.";
+  const interviewerName = "AI Interviewer";
+  const interviewerTitle = "TechPrep AI Interviewer";
+  const interviewerBio = "Your TechPrep AI technical interviewer has led multiple high-scale and security-critical projects. They prefer developers who understand not just how to implement solutions, but why they matter. They value clarity, scalability, and deep technical insight.";
   
   const goals = React.useMemo(() => {
     const roleGoals: Record<string, string[]> = {
@@ -118,19 +118,26 @@ export const SessionPage: React.FC = () => {
   const scenarioText = React.useMemo(() => {
     const typeLabel = interviewType === 'behavioural' ? 'behavioral competency' : 
                       interviewType === 'resume_based' ? 'resume-based deep-dive' : 'technical';
-    return `You're interviewing for a ${role} role. This is a ${typeLabel} interview where Telusko will ask specific questions about your experience, technical knowledge, and problem-solving approach. Be concise, use the STAR method for behavioral questions, and show deep technical understanding.`;
+    return `You're interviewing for a ${role} role. This is a ${typeLabel} interview where the AI will ask specific questions about your experience, technical knowledge, and problem-solving approach. Be concise, use the STAR method for behavioral questions, and show deep technical understanding.`;
   }, [role, interviewType]);
 
   // Speech helper utilities
   const getBestVoice = () => {
     const voices = window.speechSynthesis.getVoices();
+    const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+    // Filter out known male voices
+    const genderNeutralOrFemale = englishVoices.filter(v => {
+      const name = v.name.toLowerCase();
+      return !name.includes('male') && !name.includes('david') && !name.includes('george') && !name.includes('mark') && !name.includes('ravi') && !name.includes('sean');
+    });
+    const candidateVoices = genderNeutralOrFemale.length > 0 ? genderNeutralOrFemale : englishVoices.length > 0 ? englishVoices : voices;
     return (
-      voices.find((v) => v.name.includes('Google UK English Female')) ||
-      voices.find((v) => v.name.includes('Google') && v.lang.startsWith('en')) ||
-      voices.find((v) => v.name.includes('Samantha')) ||
-      voices.find((v) => v.lang === 'en-US' && !v.name.includes('Male')) ||
-      voices.find((v) => v.lang.startsWith('en')) ||
-      voices[0]
+      candidateVoices.find((v) => v.name.includes('Google UK English Female')) ||
+      candidateVoices.find((v) => v.name.includes('Google') && v.lang.startsWith('en')) ||
+      candidateVoices.find((v) => v.name.includes('Samantha')) ||
+      candidateVoices.find((v) => v.name.includes('Zira')) ||
+      candidateVoices.find((v) => v.name.includes('Hazel')) ||
+      candidateVoices[0]
     );
   };
 
@@ -738,7 +745,7 @@ export const SessionPage: React.FC = () => {
               <div className="absolute bottom-24 max-w-2xl w-full px-4 z-10 animate-fade-in-up">
                 <div className="bg-surface/90 backdrop-blur-md p-4 rounded-2xl border border-outline-variant shadow-premium text-center">
                   <span className="text-[10px] font-black text-primary uppercase tracking-widest block mb-1">
-                    {aiState === 'speaking' ? 'Telusko Speaking...' : aiState === 'listening' ? 'Listening (Speak now)' : aiState === 'evaluating' ? 'Evaluating answer...' : 'Live Transcripts'}
+                    {aiState === 'speaking' ? 'Interviewer Speaking...' : aiState === 'listening' ? 'Listening (Speak now)' : aiState === 'evaluating' ? 'Evaluating answer...' : 'Live Transcripts'}
                   </span>
                   <p className="text-sm font-sans leading-relaxed text-on-surface">
                     {aiState === 'speaking' && (currentAcknowledgment
@@ -818,7 +825,7 @@ export const SessionPage: React.FC = () => {
                 {/* Red hangup phone (End early) */}
                 <button
                   onClick={() => {
-                    if (confirm('End this Telusko interview session? Your performance report will be compiled immediately.')) {
+                    if (confirm('End this interview session? Your performance report will be compiled immediately.')) {
                       handleForceEndSession();
                     }
                   }}
