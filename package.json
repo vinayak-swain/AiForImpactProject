@@ -2,13 +2,17 @@
   "name": "techprep-ai-monorepo",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/api",
+    "apps/frontend"
   ],
   "scripts": {
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:frontend": "npm run dev --workspace=apps/frontend",
     "dev:ai": "cd apps/ai-service && uvicorn main:app --reload --port 8000",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\""
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
+    "build": "npm run build --workspace=apps/api && npm run build --workspace=apps/frontend",
+    "build:frontend": "npm run build --workspace=apps/frontend",
+    "build:api": "npm run build --workspace=apps/api"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

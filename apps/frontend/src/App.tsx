@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { SessionPage } from './pages/SessionPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { SummaryPage } from './pages/SummaryPage';
+import { ResumePage } from './pages/ResumePage';
 import { ThemeToggle } from './components/ThemeToggle';
 import { useInteractions } from './utils/interactions';
 
@@ -26,6 +27,7 @@ function App() {
         <Route path="/session" element={<SessionPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/summary" element={<SummaryPage />} />
+        <Route path="/resume" element={<ResumePage />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
