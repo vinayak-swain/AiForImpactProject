@@ -156,12 +156,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // GET /oauth/google
   fastify.get('/oauth/google', async (request, reply) => {
+    const baseUrl = process.env.API_URL || `${request.protocol}://${request.hostname}`;
     if (process.env.GOOGLE_CLIENT_ID === 'mock' || !process.env.GOOGLE_CLIENT_ID) {
       fastify.log.info('Mock Google OAuth triggered. Redirecting to callback.');
-      return reply.redirect(`${process.env.API_URL || 'http://localhost:3000'}/api/auth/oauth/google/callback?code=mock_google_code`);
+      return reply.redirect(`${baseUrl}/api/auth/oauth/google/callback?code=mock_google_code`);
     }
 
-    const redirectUri = encodeURIComponent(`${process.env.API_URL || 'http://localhost:3000'}/api/auth/oauth/google/callback`);
+    const redirectUri = encodeURIComponent(`${baseUrl}/api/auth/oauth/google/callback`);
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=email%20profile`;
     return reply.redirect(googleAuthUrl);
   });
@@ -215,12 +216,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // GET /oauth/github
   fastify.get('/oauth/github', async (request, reply) => {
+    const baseUrl = process.env.API_URL || `${request.protocol}://${request.hostname}`;
     if (process.env.GITHUB_CLIENT_ID === 'mock' || !process.env.GITHUB_CLIENT_ID) {
       fastify.log.info('Mock GitHub OAuth triggered. Redirecting to callback.');
-      return reply.redirect(`${process.env.API_URL || 'http://localhost:3000'}/api/auth/oauth/github/callback?code=mock_github_code`);
+      return reply.redirect(`${baseUrl}/api/auth/oauth/github/callback?code=mock_github_code`);
     }
 
-    const redirectUri = encodeURIComponent(`${process.env.API_URL || 'http://localhost:3000'}/api/auth/oauth/github/callback`);
+    const redirectUri = encodeURIComponent(`${baseUrl}/api/auth/oauth/github/callback`);
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
     return reply.redirect(githubAuthUrl);
   });
