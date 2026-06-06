@@ -1,0 +1,400 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-high: var(--color-surface-container-high);
+  --color-surface-container-highest: var(--color-surface-container-highest);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-on-primary-fixed: var(--on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
+  
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+  
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
+  
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-on-error: var(--on-error);
+  --color-on-error-container: var(--on-error-container);
+  
+  --color-on-background: var(--on-background);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-inverse-primary: var(--inverse-primary);
+  
+  --font-headline: "DM Sans", "Geist", sans-serif;
+  --font-display: "DM Sans", "Geist", sans-serif;
+  --font-body: "DM Sans", "Inter", sans-serif;
+  --font-label: "DM Sans", "JetBrains Mono", monospace;
+  --font-code: "JetBrains Mono", monospace;
+}
+
+:root {
+  /* DEFAULT DARK THEME (deep space blacks, electric blues, cyan glows) */
+  --background: #0a0a0f;
+  --surface: #0d0d1a;
+  --surface-container: #15152a;
+  --surface-container-low: #0f0f20;
+  --surface-container-lowest: #06060c;
+  --surface-container-high: #1c1c38;
+  --surface-container-highest: #232346;
+  
+  --primary: #4d9fff; /* electric blue */
+  --on-primary: #ffffff;
+  --primary-container: #1b355a;
+  --on-primary-container: #dce9ff;
+  
+  --secondary: #00f5ff; /* cyan glow */
+  --on-secondary: #0a0a0f;
+  
+  --accent: #00f5ff;
+  --on-accent: #0a0a0f;
+  
+  --tertiary: #4d9fff;
+  
+  --success: #00f5ff;
+  --warning: #ffb700;
+  --error: #ff4d4d;
+  
+  --on-background: #ffffff;
+  --on-surface: #f0f0f5;
+  --on-surface-variant: #94a3b8;
+  
+  --outline: #2a2a48;
+  --outline-variant: #1c1c38;
+}
+
+/* Explicit data-theme dark definitions */
+[data-theme="dark"] {
+  --background: #0a0a0f;
+  --surface: #0d0d1a;
+  --surface-container: #15152a;
+  --surface-container-low: #0f0f20;
+  --surface-container-lowest: #06060c;
+  --surface-container-high: #1c1c38;
+  --surface-container-highest: #232346;
+  
+  --primary: #4d9fff;
+  --on-primary: #ffffff;
+  --primary-container: #1b355a;
+  --on-primary-container: #dce9ff;
+  
+  --secondary: #00f5ff;
+  --on-secondary: #0a0a0f;
+  
+  --accent: #00f5ff;
+  --on-accent: #0a0a0f;
+  
+  --tertiary: #4d9fff;
+  
+  --success: #00f5ff;
+  --warning: #ffb700;
+  --error: #ff4d4d;
+  
+  --on-background: #ffffff;
+  --on-surface: #f0f0f5;
+  --on-surface-variant: #94a3b8;
+  
+  --outline: #2a2a48;
+  --outline-variant: #1c1c38;
+}
+
+/* Light theme overrides (off-white, warm grays, deep indigo accents) */
+[data-theme="light"] {
+  --background: #f5f5f0;
+  --surface: #ffffff;
+  --surface-container: #eaeae4;
+  --surface-container-low: #f0f0eb;
+  --surface-container-lowest: #fafaf7;
+  --surface-container-high: #e2e2db;
+  --surface-container-highest: #dadad2;
+  
+  --primary: #312e81; /* deep indigo */
+  --on-primary: #ffffff;
+  --primary-container: #e0e7ff;
+  --on-primary-container: #1e1b4b;
+  
+  --secondary: #4f46e5; /* indigo accent */
+  --on-secondary: #ffffff;
+  
+  --accent: #4f46e5;
+  --on-accent: #ffffff;
+  
+  --tertiary: #6366f1;
+  
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  
+  --on-background: #111111;
+  --on-surface: #1f2937;
+  --on-surface-variant: #4b5563;
+  
+  --outline: #cbd5e1;
+  --outline-variant: #e2e8f0;
+}
+
+/* Map specific theme classes to our reactive css variables */
+.theme-celestial,
+.theme-joy,
+.theme-joy-dark,
+.theme-signup,
+.theme-login {
+  --background: var(--background);
+  --surface: var(--surface);
+  --surface-container: var(--surface-container);
+  --surface-container-low: var(--surface-container-low);
+  --surface-container-lowest: var(--surface-container-lowest);
+  --surface-container-high: var(--surface-container-high);
+  --surface-container-highest: var(--surface-container-highest);
+  --primary: var(--primary);
+  --on-primary: var(--on-primary);
+  --primary-container: var(--primary-container);
+  --on-primary-container: var(--on-primary-container);
+  --secondary: var(--secondary);
+  --on-secondary: var(--on-secondary);
+  --accent: var(--accent);
+  --on-accent: var(--on-accent);
+  --tertiary: var(--tertiary);
+  --success: var(--success);
+  --warning: var(--warning);
+  --error: var(--error);
+  --on-background: var(--on-background);
+  --on-surface: var(--on-surface);
+  --on-surface-variant: var(--on-surface-variant);
+  --outline: var(--outline);
+  --outline-variant: var(--outline-variant);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--background);
+  color: var(--on-background);
+}
+
+/* Global 300ms transitions for theme-aware layout changes */
+body, header, footer, section, main, div, button, select, input, textarea, a, span, table, th, td, h1, h2, h3, h4, h5, h6, label {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Cosmic Switch Metaphor Toggle Switch Styling */
+.theme-toggle-container {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 10000;
+}
+
+.cosmic-toggle {
+  width: 68px;
+  height: 36px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border-radius: 100px;
+  padding: 3px;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 2px solid #334155;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+html[data-theme="light"] .cosmic-toggle {
+  background: linear-gradient(135deg, #38bdf8, #bae6fd);
+  border-color: #7dd3fc;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+}
+
+.cosmic-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  position: absolute;
+  left: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Moon crater details */
+.cosmic-thumb::before {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #94a3b8;
+  border-radius: 50%;
+  top: 5px;
+  left: 5px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.cosmic-thumb::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #94a3b8;
+  border-radius: 50%;
+  bottom: 6px;
+  right: 6px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+html[data-theme="light"] .cosmic-thumb {
+  transform: translateX(30px);
+  background: #fbbf24; /* Golden Sun */
+  box-shadow: 0 2px 10px rgba(251, 191, 36, 0.8), 0 0 15px rgba(251, 191, 36, 0.4);
+}
+
+html[data-theme="light"] .cosmic-thumb::before,
+html[data-theme="light"] .cosmic-thumb::after {
+  opacity: 0; /* Hide craters on Sun */
+}
+
+/* Stars/Clouds inside track */
+.cosmic-stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 100px;
+}
+
+.cosmic-star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation: twinkle 2s infinite ease-in-out;
+}
+
+.cosmic-star:nth-child(1) { top: 8px; right: 12px; width: 2px; height: 2px; }
+.cosmic-star:nth-child(2) { bottom: 10px; right: 24px; width: 3px; height: 3px; }
+.cosmic-star:nth-child(3) { top: 18px; right: 8px; width: 1.5px; height: 1.5px; }
+
+html[data-theme="light"] .cosmic-star {
+  background: #ffffff;
+  opacity: 0.9;
+  border-radius: 50%;
+  animation: float-cloud 4s infinite ease-in-out;
+}
+
+/* Make stars look like floating clouds in light theme */
+html[data-theme="light"] .cosmic-star:nth-child(1) {
+  width: 14px;
+  height: 8px;
+  top: 8px;
+  left: 10px;
+  border-radius: 10px;
+}
+html[data-theme="light"] .cosmic-star:nth-child(2) {
+  width: 10px;
+  height: 6px;
+  bottom: 8px;
+  left: 20px;
+  border-radius: 10px;
+}
+html[data-theme="light"] .cosmic-star:nth-child(3) {
+  display: none;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+@keyframes float-cloud {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* Levitation Animation for main heading */
+@keyframes levitate {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.levitate {
+  animation: levitate 3s ease-in-out infinite;
+}
+
+/* Scroll Fade Up Entrance Animation classes */
+.fade-up-entry {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.fade-up-entry.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bouncy-hover {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bouncy-hover:hover {
+  transform: scale(1.03);
+}
+
+.celestial-shadow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}

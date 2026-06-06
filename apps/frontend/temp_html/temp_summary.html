@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Post-Interview Summary | InterviewJoy</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#e040a0",
+                        "surface-container-low": "#fbf2fb",
+                        "on-primary-fixed-variant": "#a02070",
+                        "tertiary-fixed-dim": "#80d0f0",
+                        "on-primary-fixed": "#3d0028",
+                        "on-error-container": "#9b1c1c",
+                        "outline": "#907898",
+                        "on-secondary-fixed-variant": "#4a3068",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#2e2040",
+                        "surface-dim": "#e0d6e0",
+                        "surface-bright": "#fef7ff",
+                        "on-primary-container": "#2e1a28",
+                        "on-background": "#2e1a28",
+                        "primary": "#e040a0",
+                        "tertiary-fixed": "#c8eaff",
+                        "outline-variant": "#dcc8e0",
+                        "error": "#e53e3e",
+                        "inverse-on-surface": "#fef7ff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#c8a8e8",
+                        "primary-fixed-dim": "#f0a0cc",
+                        "tertiary": "#0096cc",
+                        "background": "#fef7ff",
+                        "on-tertiary-container": "#00334d",
+                        "tertiary-container": "#40c0ee",
+                        "on-tertiary-fixed-variant": "#005580",
+                        "on-secondary-fixed": "#1a1030",
+                        "inverse-primary": "#f0a0cc",
+                        "inverse-surface": "#2e1a28",
+                        "surface-container": "#f8eef8",
+                        "surface-variant": "#f2e8f2",
+                        "primary-fixed": "#ffd6ee",
+                        "on-surface-variant": "#604868",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffe8e8",
+                        "secondary-container": "#eedcff",
+                        "surface-container-high": "#f2e8f2",
+                        "secondary": "#7c52aa",
+                        "primary-container": "#f080c0",
+                        "surface-container-highest": "#ece2ec",
+                        "surface": "#fef7ff",
+                        "secondary-fixed": "#eedcff",
+                        "on-tertiary-fixed": "#001a33",
+                        "on-surface": "#2e1a28"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["DM Sans", "sans-serif"],
+                        "display": ["DM Sans", "sans-serif"],
+                        "body": ["DM Sans", "sans-serif"],
+                        "label": ["DM Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            overflow-x: hidden;
+        }
+        .bouncy-hover:hover {
+            transform: scale(1.03);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        .radar-grid {
+            stroke: #dcc8e0;
+            fill: none;
+        }
+        .radar-area {
+            fill: rgba(224, 64, 160, 0.2);
+            stroke: #e040a0;
+            stroke-width: 3;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<canvas id="particle-canvas"></canvas>
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim border-b border-outline-variant shadow-[0_4px_16px_rgba(224,64,160,0.15)] flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50">
+<div class="text-2xl font-black text-primary dark:text-primary-fixed tracking-tighter">
+            InterviewJoy
+        </div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 transition-all duration-300 ease-out active:scale-95" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-medium hover:scale-105 transition-transform duration-200 ease-out" href="#">Practice</a>
+<a class="text-on-surface-variant font-medium hover:scale-105 transition-transform duration-200 ease-out" href="#">History</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-variant rounded-full transition-colors">
+<span class="material-symbols-outlined text-primary">timer</span>
+</button>
+<button class="p-2 hover:bg-surface-variant rounded-full transition-colors">
+<span class="material-symbols-outlined text-primary">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden">
+<img alt="User profile avatar" data-alt="A friendly, high-fidelity 3D avatar of a professional woman with a warm smile, wearing modern glasses and professional-casual attire. The lighting is soft and colorful, echoing a playful candy-themed palette with soft pinks and purples in the background. The style is clean, vibrant, and welcoming, perfect for a joyful tech preparation app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjJ_Jee6dY4sIrZZv8aQ5S33EzBVHB9LDX6auUnP39tVVhXtTcM0Ly9tO0SSD5nm8-BGELnJc9f00MwJSXt40D-1-326qXgBptw47mS2XUw6Hzk-ZYFSWL6efxZkPSK2h8YLWZqDrJwe9PmLg1Dt79Ulmh5WD1yi_1mzqGIB74KyeIBRQL-VQTg_KjocVULqrscrq6eiTKDSiKcinqv0isg_Z954jBXZhDK92EKUt0mZAYS1VP2QNHMvy6WYdCw4KFj0UEGqJuEeI"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-5xl mx-auto px-4 py-12 pb-32">
+<div class="text-center mb-12">
+<h1 class="font-headline font-bold text-4xl text-on-surface tracking-tight mb-2">Interview Summary</h1>
+<p class="text-on-surface-variant font-medium">Session ID: #TECH-2024-8821 • Finished 5 mins ago</p>
+</div>
+<!-- Hero Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
+<!-- Score Card -->
+<div class="md:col-span-5 bg-surface p-8 rounded-lg shadow-[0_8px_24px_rgba(224,64,160,0.1)] flex flex-col items-center justify-center text-center floating">
+<div class="relative mb-6">
+<svg class="w-48 h-48">
+<circle class="text-surface-container-highest" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" stroke-dasharray="552.92" stroke-dashoffset="88.4" stroke-linecap="round" stroke-width="12" transform="rotate(-90 96 96)"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-6xl font-black text-primary">84</span>
+<span class="text-xl font-bold text-secondary">A- Grade</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold text-on-surface mb-2">Great Performance!</h3>
+<p class="text-on-surface-variant">You're in the top 15% of candidates for senior engineering roles.</p>
+</div>
+<!-- Radar Chart Card -->
+<div class="md:col-span-7 bg-surface p-8 rounded-lg shadow-[0_8px_24px_rgba(124,82,170,0.1)] flex flex-col items-center">
+<h3 class="text-lg font-bold text-on-surface mb-6 self-start">Skill Breakdown</h3>
+<div class="w-full h-64 relative flex items-center justify-center">
+<svg class="w-full h-full max-w-[280px]" viewbox="0 0 200 200">
+<!-- Grids -->
+<polygon class="radar-grid" points="100,10 178,55 178,145 100,190 22,145 22,55"></polygon>
+<polygon class="radar-grid" points="100,40 152,70 152,130 100,160 48,130 48,70"></polygon>
+<polygon class="radar-grid" points="100,70 126,85 126,115 100,130 74,115 74,85"></polygon>
+<!-- Axis Lines -->
+<line class="radar-grid" x1="100" x2="100" y1="100" y2="10"></line>
+<line class="radar-grid" x1="100" x2="178" y1="100" y2="55"></line>
+<line class="radar-grid" x1="100" x2="178" y1="100" y2="145"></line>
+<line class="radar-grid" x1="100" x2="100" y1="100" y2="190"></line>
+<line class="radar-grid" x1="100" x2="22" y1="100" y2="145"></line>
+<line class="radar-grid" x1="100" x2="22" y1="100" y2="55"></line>
+<!-- Data Area (Logic, Comm, Tech, Lead, Del, STAR) -->
+<polygon class="radar-area" points="100,25 160,65 170,135 100,150 40,130 50,60"></polygon>
+</svg>
+<!-- Labels -->
+<span class="absolute top-0 text-[10px] font-bold text-secondary uppercase">Logic</span>
+<span class="absolute top-[25%] right-0 text-[10px] font-bold text-secondary uppercase">Communication</span>
+<span class="absolute bottom-[25%] right-0 text-[10px] font-bold text-secondary uppercase">Technical Depth</span>
+<span class="absolute bottom-0 text-[10px] font-bold text-secondary uppercase">Leadership</span>
+<span class="absolute bottom-[25%] left-0 text-[10px] font-bold text-secondary uppercase">Delivery</span>
+<span class="absolute top-[25%] left-0 text-[10px] font-bold text-secondary uppercase">STAR Alignment</span>
+</div>
+</div>
+</div>
+<!-- Quote Block -->
+<div class="bg-primary-fixed border-l-8 border-primary p-8 rounded-lg mb-8 shadow-sm">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-4xl text-primary opacity-50" style="font-variation-settings: 'FILL' 1;">format_quote</span>
+<p class="text-xl font-medium text-on-primary-fixed-variant leading-relaxed">
+                    "Excellent technical clarity; focus on strengthening the 'Action' phase of your STAR responses to improve overall impact."
+                </p>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Questions List -->
+<div class="lg:col-span-2 space-y-4">
+<h3 class="text-xl font-bold text-on-surface px-2">Session Recap (8 Questions)</h3>
+<!-- Question Item 1 (Open) -->
+<div class="bg-surface rounded-lg border border-outline-variant overflow-hidden">
+<button class="w-full flex items-center justify-between p-4 hover:bg-surface-container transition-colors" onclick="toggleAccordion('q1')">
+<div class="flex items-center gap-4">
+<span class="w-8 h-8 flex items-center justify-center bg-primary text-on-primary rounded-full text-sm font-bold">1</span>
+<span class="font-bold text-on-surface text-left">Tell me about a difficult bug you solved.</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold px-3 py-1 rounded-full">Good</span>
+<span class="material-symbols-outlined text-on-surface-variant transition-transform" id="q1-icon">expand_more</span>
+</div>
+</button>
+<div class="hidden px-4 pb-4 text-on-surface-variant" id="q1">
+<div class="pt-2 border-t border-outline-variant mt-2">
+<p class="text-sm italic mb-2">"I was working on a distributed system when we noticed a race condition..."</p>
+<div class="bg-surface-container p-3 rounded-lg text-xs">
+<strong class="text-primary uppercase block mb-1">Feedback</strong>
+                                Strong technical articulation. You correctly identified the mutex issue, but try to explain why you chose that specific solution over semaphores.
+                            </div>
+</div>
+</div>
+</div>
+<!-- Repeat for other questions -->
+<div class="bg-surface rounded-lg border border-outline-variant overflow-hidden opacity-80">
+<button class="w-full flex items-center justify-between p-4 hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<span class="w-8 h-8 flex items-center justify-center bg-outline text-white rounded-full text-sm font-bold">2</span>
+<span class="font-bold text-on-surface text-left">Describe a conflict with a coworker.</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold px-3 py-1 rounded-full">Great</span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</button>
+</div>
+<div class="bg-surface rounded-lg border border-outline-variant overflow-hidden opacity-60">
+<button class="w-full flex items-center justify-between p-4 hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<span class="w-8 h-8 flex items-center justify-center bg-outline text-white rounded-full text-sm font-bold">3</span>
+<span class="font-bold text-on-surface text-left">How do you handle scope creep?</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="bg-surface-variant text-on-surface-variant text-xs font-bold px-3 py-1 rounded-full">Fair</span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</button>
+</div>
+<p class="text-center text-on-surface-variant text-xs font-medium py-2">5 more questions recorded in the full report</p>
+</div>
+<!-- Action Plan -->
+<div class="lg:col-span-1">
+<div class="bg-secondary-container p-6 rounded-lg sticky top-28 shadow-lg">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+<h3 class="text-xl font-black text-on-secondary-container tracking-tight">Action Plan</h3>
+</div>
+<ul class="space-y-4">
+<li class="flex items-start gap-3 p-3 bg-surface-container-lowest/50 rounded-lg group transition-all hover:bg-surface-container-lowest cursor-pointer checklist-item">
+<div class="mt-1 w-5 h-5 rounded-full border-2 border-secondary flex items-center justify-center bg-transparent transition-colors"></div>
+<span class="text-sm font-medium text-on-secondary-container transition-all">Refine STAR 'Action' descriptions</span>
+</li>
+<li class="flex items-start gap-3 p-3 bg-surface-container-lowest/50 rounded-lg group transition-all hover:bg-surface-container-lowest cursor-pointer checklist-item">
+<div class="mt-1 w-5 h-5 rounded-full border-2 border-secondary flex items-center justify-center bg-transparent transition-colors"></div>
+<span class="text-sm font-medium text-on-secondary-container transition-all">Practice System Design scalability talk</span>
+</li>
+<li class="flex items-start gap-3 p-3 bg-surface-container-lowest/50 rounded-lg group transition-all hover:bg-surface-container-lowest cursor-pointer checklist-item">
+<div class="mt-1 w-5 h-5 rounded-full border-2 border-secondary flex items-center justify-center bg-transparent transition-colors"></div>
+<span class="text-sm font-medium text-on-secondary-container transition-all">Improve empathy markers in behavioral</span>
+</li>
+<li class="flex items-start gap-3 p-3 bg-surface-container-lowest/50 rounded-lg group transition-all hover:bg-surface-container-lowest cursor-pointer checklist-item">
+<div class="mt-1 w-5 h-5 rounded-full border-2 border-secondary flex items-center justify-center bg-transparent transition-colors"></div>
+<span class="text-sm font-medium text-on-secondary-container transition-all">Watch mock interview for Q4</span>
+</li>
+<li class="flex items-start gap-3 p-3 bg-surface-container-lowest/50 rounded-lg group transition-all hover:bg-surface-container-lowest cursor-pointer checklist-item">
+<div class="mt-1 w-5 h-5 rounded-full border-2 border-secondary flex items-center justify-center bg-transparent transition-colors"></div>
+<span class="text-sm font-medium text-on-secondary-container transition-all">Download full performance PDF</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="mt-16 flex flex-col md:flex-row items-center justify-center gap-6">
+<button class="flex items-center gap-2 px-8 py-4 rounded-full font-bold text-primary border-2 border-primary hover:bg-primary-fixed transition-colors bouncy-hover">
+<span class="material-symbols-outlined">download</span>
+                Download PDF Report
+            </button>
+<button class="bg-primary text-on-primary px-10 py-5 rounded-full font-bold text-lg shadow-[0_4px_16px_rgba(224,64,160,0.3)] bouncy-hover active:scale-95 transition-all">
+                Start New Session
+            </button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 md:hidden bg-surface dark:bg-surface-container-highest shadow-lg rounded-t-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined">help_center</span>
+<span class="text-[10px] font-bold">Question</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-6 py-1 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="text-[10px] font-bold">Feedback</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined">tune</span>
+<span class="text-[10px] font-bold">Settings</span>
+</a>
+</nav>
+<script>
+        // Particle Background Logic
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function initParticles() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 20 + 10,
+                    // Re-themed particles to celestial palette
+                    color: i % 2 === 0 ? '#f080c0' : '#80d0f0', 
+                    velocity: {
+                        x: (Math.random() - 0.5) * 0.5,
+                        y: (Math.random() - 0.5) * 0.5
+                    }
+                });
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(p => {
+                p.x += p.velocity.x;
+                p.y += p.velocity.y;
+
+                if (p.x < 0 || p.x > canvas.width) p.velocity.x *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.velocity.y *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = 0.2;
+                ctx.fill();
+            });
+        }
+
+        window.addEventListener('resize', initParticles);
+        initParticles();
+        animate();
+
+        // Accordion Logic
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(id + '-icon');
+            const isOpen = !content.classList.contains('hidden');
+
+            // Close all others
+            document.querySelectorAll('[id^="q"]').forEach(el => {
+                if (el.id.length <= 3) el.classList.add('hidden');
+            });
+            document.querySelectorAll('[id$="-icon"]').forEach(el => el.style.transform = 'rotate(0deg)');
+
+            if (!isOpen) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        // Checklist Interactions
+        document.querySelectorAll('.checklist-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const circle = item.querySelector('div');
+                const text = item.querySelector('span');
+                if (circle.innerHTML === '') {
+                    circle.innerHTML = '<span class="material-symbols-outlined text-[12px] text-white">check</span>';
+                    circle.classList.add('bg-secondary');
+                    text.classList.add('line-through', 'opacity-50');
+                } else {
+                    circle.innerHTML = '';
+                    circle.classList.remove('bg-secondary');
+                    text.classList.remove('line-through', 'opacity-50');
+                }
+            });
+        });
+    </script>
+</body></html>

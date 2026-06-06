@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Signup | TechPrep AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#212A31",
+                        "surface": "#2E3944",
+                        "primary": "#124E66",
+                        "on-primary": "#FFFFFF",
+                        "secondary": "#E64833",
+                        "on-surface": "#F0F0F0",
+                        "on-surface-variant": "#94A3B8",
+                        "outline": "#475569",
+                        "outline-variant": "#334155",
+                        "surface-container": "#374151",
+                        "surface-container-low": "#1E293B",
+                        "tertiary": "#748D92"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.75rem",
+                        "lg": "1.5rem",
+                        "xl": "2.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["DM Sans", "sans-serif"],
+                        "display": ["DM Sans", "sans-serif"],
+                        "body": ["DM Sans", "sans-serif"],
+                        "label": ["DM Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'DM Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .celestial-shadow-primary { box-shadow: 0 8px 32px rgba(18, 78, 102, 0.4); }
+        .celestial-shadow-secondary { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
+        .bouncy-hover:hover { transform: translateY(-2px); }
+        .glass-card {
+            background: #2E3944;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        #fluid-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col overflow-x-hidden">
+<canvas id="fluid-canvas"></canvas>
+<header class="flex justify-between items-center w-full px-6 py-4 fixed top-0 left-0 z-50 bg-transparent">
+<div class="text-2xl font-black text-secondary cursor-pointer transition-all duration-300 ease-out hover:scale-110">
+        TechPrep AI
+    </div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant cursor-pointer transition-all duration-300 ease-out hover:scale-110 p-2 rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined">light_mode</span>
+</button>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center px-4 py-24">
+<div class="w-full max-w-[480px] glass-card rounded-xl celestial-shadow-secondary p-8 md:p-10 transition-all duration-500 ease-out animate-in fade-in slide-in-from-bottom-4">
+<div class="text-center mb-8">
+<h1 class="text-3xl font-bold text-on-surface mb-2 tracking-tight">Create your account</h1>
+<p class="text-on-surface-variant font-medium">Join 50,000+ engineers prepping for their dream roles</p>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-8">
+<button class="flex items-center justify-center gap-2 py-3 px-4 rounded-full border border-outline hover:border-secondary transition-all duration-200 font-medium bouncy-hover bg-surface-container-low text-on-surface">
+<img alt="Google" class="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-iYQDMi8TwQPqQCe7JvrAHgUjeUh7xcyZCn2SSc0Z7tQCqYZc2nkILUyuThcXXTYWVS6d-_BliKN6asghZyl4S2L8rUiyY3_99hhB1ZtnTR5avlYS7gpcQuG70_PUD-d_88rH6jvgInQBPA7-lvJtaOvwVIPoZBFu1PU5OK1IWNzXc7zhij70NiDnKYr-UaGhm9WkP9vD4us7xvVyEgmf_tTlGzsmscNPHe4nvGG1fovK49DlAgL3Ojw6QZdhlGwT3vSkWslIkgM"/>
+<span>Google</span>
+</button>
+<button class="flex items-center justify-center gap-2 py-3 px-4 rounded-full border border-outline hover:border-secondary transition-all duration-200 font-medium bouncy-hover bg-surface-container-low text-on-surface">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<span>GitHub</span>
+</button>
+</div>
+<div class="relative flex items-center mb-8">
+<div class="flex-grow border-t border-outline-variant"></div>
+<span class="flex-shrink mx-4 text-xs text-on-surface-variant font-bold uppercase tracking-widest">or</span>
+<div class="flex-grow border-t border-outline-variant"></div>
+</div>
+<form class="space-y-5" id="signup-form">
+<div class="space-y-1">
+<label class="text-sm font-bold text-on-surface-variant ml-4 uppercase tracking-wider">Email Address</label>
+<input class="w-full px-6 py-4 rounded-full bg-surface-container-low border border-outline-variant focus:border-secondary focus:ring-0 transition-all outline-none text-on-surface placeholder:text-outline" placeholder="alex@example.com" required="" type="email"/>
+</div>
+<div class="space-y-1">
+<label class="text-sm font-bold text-on-surface-variant ml-4 uppercase tracking-wider">Password</label>
+<input class="w-full px-6 py-4 rounded-full bg-surface-container-low border border-outline-variant focus:border-secondary focus:ring-0 transition-all outline-none text-on-surface placeholder:text-outline" placeholder="••••••••" required="" type="password"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="text-sm font-bold text-on-surface-variant ml-4 uppercase tracking-wider">Role Target</label>
+<div class="relative">
+<select class="w-full px-6 py-4 rounded-full bg-surface-container-low border border-outline-variant focus:border-secondary focus:ring-0 transition-all outline-none appearance-none cursor-pointer text-on-surface">
+<option value="sde">SDE</option>
+<option value="ml">ML</option>
+<option value="devops">DevOps</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-sm font-bold text-on-surface-variant ml-4 uppercase tracking-wider">Experience</label>
+<div class="experience-level-selector flex bg-surface-container-low p-1 rounded-full border border-outline-variant">
+<button class="exp-btn flex-1 py-3 px-2 rounded-full text-xs font-bold transition-all bg-secondary text-white shadow-sm" data-level="Junior" type="button">Jun</button>
+<button class="exp-btn flex-1 py-3 px-2 rounded-full text-xs font-bold transition-all text-on-surface-variant" data-level="Mid-Level" type="button">Mid</button>
+<button class="exp-btn flex-1 py-3 px-2 rounded-full text-xs font-bold transition-all text-on-surface-variant" data-level="Senior" type="button">Sen</button>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-primary text-white font-black text-lg rounded-full celestial-shadow-primary bouncy-hover transition-all duration-300 mt-4 hover:bg-[#1a5f7a]" type="submit">
+                Create Account
+            </button>
+</form>
+<div class="mt-8 text-center">
+<p class="text-on-surface-variant font-medium">
+                Already have an account? 
+                <a class="text-secondary font-bold hover:underline transition-all" href="#">Login</a>
+</p>
+</div>
+</div>
+</main>
+<footer class="flex flex-col md:flex-row justify-between items-center w-full px-6 py-8 mt-auto bg-transparent">
+<div class="text-lg font-bold text-secondary mb-4 md:mb-0">TechPrep AI</div>
+<div class="flex gap-6 mb-4 md:mb-0">
+<a class="text-on-surface-variant font-body text-sm hover:text-secondary transition-colors" href="#">Privacy</a>
+<a class="text-on-surface-variant font-body text-sm hover:text-secondary transition-colors" href="#">Terms</a>
+<a class="text-on-surface-variant font-body text-sm hover:text-secondary transition-colors" href="#">Support</a>
+</div>
+<div class="text-on-surface-variant opacity-60 font-body text-sm">
+        © 2024 TechPrep AI. Celestial Intelligence Edition.
+    </div>
+</footer>
+<script>
+    // Particle Background Logic
+    const canvas = document.getElementById('fluid-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor() {
+            this.init();
+        }
+        init() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 3 + 1;
+            this.speedX = (Math.random() - 0.5) * 0.8;
+            this.speedY = (Math.random() - 0.5) * 0.8;
+            this.color = Math.random() > 0.5 ? '#124E66' : '#E64833';
+            this.opacity = Math.random() * 0.4 + 0.2;
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+            if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+        }
+        draw() {
+            ctx.globalAlpha = this.opacity;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function initParticles() {
+        particles = [];
+        for (let i = 0; i < 60; i++) {
+            particles.push(new Particle());
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+
+    initParticles();
+    animate();
+
+    // Experience Selector Logic
+    const expButtons = document.querySelectorAll('.exp-btn');
+    expButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            expButtons.forEach(b => {
+                b.classList.remove('bg-secondary', 'shadow-sm', 'text-white');
+                b.classList.add('text-on-surface-variant');
+            });
+            btn.classList.add('bg-secondary', 'shadow-sm', 'text-white');
+            btn.classList.remove('text-on-surface-variant');
+        });
+    });
+
+    // Form Submission Effect
+    const form = document.getElementById('signup-form');
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button[type="submit"]');
+        btn.innerHTML = '<span>Processing...</span>';
+        btn.classList.add('opacity-80');
+        setTimeout(() => {
+            btn.innerHTML = 'Account Ready ✨';
+            btn.classList.remove('bg-primary');
+            btn.classList.add('bg-secondary');
+            btn.classList.remove('opacity-80');
+        }, 1200);
+    });
+</script>
+</body></html>
